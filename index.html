@@ -9,13 +9,14 @@
   <link rel="icon" href="assets/images/sun.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
   <script src="js/data.js" defer></script>
+  <script src="js/carrinho.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
   <header class="site-header">
     <div class="container header-inner">
-      <a class="brand" href="index.html" aria-label="Raízes do Nordeste — início">
+      <a class="brand" href="#inicio" aria-label="Raízes do Nordeste — início">
         <img src="assets/images/sun.svg" width="44" height="44" alt="">
         <span>Raízes<span class="brand-small">DO NORDESTE</span></span>
       </a>
@@ -26,9 +27,11 @@
         <a href="#sobre">Nossa história</a>
       </nav>
       <button class="button button-outline header-unit" type="button" data-feature="unit">Escolher unidade <span aria-hidden="true">↗</span></button>
+      <a class="button button-primary" id="cart-link" href="#carrinho">Carrinho <span id="cart-count">0</span></a>
     </div>
   </header>
   <div class="unit-bar"><div class="container"><p id="selected-unit" role="status">Nenhuma unidade selecionada</p><p id="storage-notice" role="status" hidden></p></div></div>
+  <p id="app-notice" class="app-notice" role="status" aria-live="polite" aria-atomic="true"></p>
 
   <main id="conteudo" tabindex="-1">
     <div id="home-view">
@@ -58,7 +61,7 @@
     <section class="container highlights section-space" id="destaques" aria-labelledby="highlights-title">
       <div class="section-heading"><div><p class="eyebrow">OS QUERIDINHOS DA CASA</p><h2 id="highlights-title">É de dar água na boca.</h2></div><p>Sabores da nossa terra que merecem<br class="desktop-break"> um lugar na sua próxima pausa.</p></div>
       <div class="product-grid" id="featured-products"></div>
-      <noscript><p class="no-script">Ative o JavaScript para visualizar os produtos, selecionar uma unidade e acessar o cardápio.</p></noscript>
+      <noscript><p class="no-script">Ative o JavaScript para visualizar os produtos, selecionar uma unidade e utilizar o cardápio e o carrinho.</p></noscript>
       <p class="illustration-note">Imagens ilustrativas. Produtos e valores fictícios para fins acadêmicos.</p>
     </section>
 
@@ -83,9 +86,26 @@
       <p class="illustration-note">Imagens ilustrativas. Produtos, preços, endereços e horários fictícios. Não realizamos vendas nesta versão.</p>
       <a class="text-link" href="#inicio">← Voltar ao início</a>
     </section>
+    <section id="cart-view" class="container section-space" aria-labelledby="cart-title" hidden>
+      <div class="section-heading">
+        <div><p class="eyebrow">SUA PAUSA ESTÁ QUASE PRONTA</p><h1 id="cart-title" tabindex="-1">Seu carrinho</h1><p id="cart-unit"></p></div>
+        <button class="button button-outline" type="button" data-feature="unit">Trocar unidade</button>
+      </div>
+      <div id="cart-empty" class="empty-cart"><h2>Seu carrinho está esperando um sabor.</h2><p>Escolha seus favoritos no cardápio para começar.</p><a class="button button-primary" href="#cardapio">Voltar ao cardápio</a></div>
+      <div id="cart-content" class="cart-layout" hidden>
+        <div id="cart-items" class="cart-items"></div>
+        <aside class="cart-summary" aria-labelledby="summary-title">
+          <h2 id="summary-title">Resumo</h2>
+          <dl><div><dt>Subtotal</dt><dd id="cart-subtotal"></dd></div><div class="summary-total"><dt>Total do pedido</dt><dd id="cart-total"></dd></div></dl>
+          <p>Retirada na unidade selecionada. Sem frete ou taxas adicionais.</p>
+          <button class="button button-primary" id="finish-order" type="button">Finalizar pedido</button>
+          <a class="button button-outline" href="#cardapio">Continuar comprando</a>
+        </aside>
+      </div>
+    </section>
   </main>
 
-  <footer class="site-footer"><div class="container"><div class="footer-top"><a class="brand" href="index.html"><img src="assets/images/sun.svg" width="38" height="38" alt=""><span>Raízes<span class="brand-small">DO NORDESTE</span></span></a><p>Sabor que acolhe. Raízes que conectam.</p><div class="footer-contact"><span>Contato fictício</span><span>oi@raizesdonordeste.example</span><span>Recife · Pernambuco</span></div></div><div class="footer-bottom"><span>© 2026 Raízes do Nordeste</span><span>Projeto acadêmico · Rede fictícia · Sem vendas reais</span></div></div></footer>
+  <footer class="site-footer"><div class="container"><div class="footer-top"><a class="brand" href="#inicio"><img src="assets/images/sun.svg" width="38" height="38" alt=""><span>Raízes<span class="brand-small">DO NORDESTE</span></span></a><p>Sabor que acolhe. Raízes que conectam.</p><div class="footer-contact"><span>Contato fictício</span><span>oi@raizesdonordeste.example</span><span>Recife · Pernambuco</span></div></div><div class="footer-bottom"><span>© 2026 Raízes do Nordeste</span><span>Projeto acadêmico · Rede fictícia · Sem vendas reais</span></div></div></footer>
 
   <dialog id="unit-dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description">
     <div class="dialog-body">
@@ -95,6 +115,31 @@
       <div id="unit-options"></div>
       <form method="dialog"><button class="button button-outline" type="submit">Fechar</button></form>
     </div>
+  </dialog>
+  <dialog id="product-dialog" aria-labelledby="product-title">
+    <div class="dialog-body">
+      <form method="dialog" class="dialog-close"><button class="button button-outline" type="submit">Fechar detalhes</button></form>
+      <img id="product-image" width="640" height="480" alt="">
+      <p id="product-category" class="eyebrow"></p>
+      <h2 id="product-title" tabindex="-1" autofocus></h2>
+      <p id="product-description"></p>
+      <div id="product-detail-price"></div>
+      <p class="quantity-label">Quantidade (1 a 99)</p>
+      <div id="product-quantity"></div>
+      <p class="detail-total" role="status" aria-live="polite">Total: <strong id="product-total"></strong></p>
+      <p id="product-error" role="alert"></p>
+      <button id="add-to-cart" class="button button-primary" type="button">Adicionar ao carrinho</button>
+    </div>
+  </dialog>
+  <dialog id="switch-dialog" aria-labelledby="switch-title" aria-describedby="switch-description">
+    <div class="dialog-body">
+      <h2 id="switch-title">Trocar de unidade?</h2>
+      <p id="switch-description"></p>
+      <div class="dialog-actions"><button id="cancel-switch" class="button button-outline" type="button" autofocus>Cancelar</button><button id="confirm-switch" class="button button-primary" type="button">Esvaziar e trocar</button></div>
+    </div>
+  </dialog>
+  <dialog id="checkout-notice" aria-labelledby="checkout-title" aria-describedby="checkout-description">
+    <div class="dialog-body"><h2 id="checkout-title">A próxima etapa vem aí!</h2><p id="checkout-description">A identificação do cliente será implementada na próxima etapa, com cadastro, login e LGPD. Seu carrinho permanece salvo quando o armazenamento está disponível. Nenhum pedido foi gerado.</p><form method="dialog"><button class="button button-primary" type="submit" autofocus>Entendi</button></form></div>
   </dialog>
 </body>
 </html>

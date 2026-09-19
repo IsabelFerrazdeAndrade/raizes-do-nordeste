@@ -3,12 +3,20 @@
 
   const data = window.RaizesNordeste;
   const storageKey = 'raizesNordeste.unitId';
-  const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+  const { money, priceCents, onSale, availableProduct, maxQuantity } = data.cart;
+  const cart = data.cart.create(storageWarning);
   const dialog = document.getElementById('unit-dialog');
   const search = document.getElementById('product-search');
   const menuView = document.getElementById('menu-view');
+  const cartView = document.getElementById('cart-view');
+  const productDialog = document.getElementById('product-dialog');
+  const switchDialog = document.getElementById('switch-dialog');
   let selectedUnit = null;
   let category = 'Todos';
+  let detailProductId = null;
+  let detailQuantity = 1;
+  let pendingUnit = null;
+  let noticeTimer;
 
   function element(tag, className, text) {
     const node = document.createElement(tag);
@@ -17,30 +25,40 @@
     return node;
   }
 
-  function productCard(product) {
+  function productPrice(product) {
+    const price = element('div', 'product-price');
+    if (onSale(product)) {
+      price.append(element('span', 'sr-only', 'Preço original: '), element('del', 'original-price', money(Math.round(product.price * 100))), element('span', 'sr-only', ' Preço promocional: '));
+    }
+    price.append(element('span', '', money(priceCents(product))));
+    return price;
+  }
+
+  function productCard(product, interactive = false) {
     const card = element('article', 'product-card');
     card.dataset.productId = product.id;
     const imageWrap = element('div', 'product-image-wrap');
     const image = element('img');
     Object.assign(image, { src: product.image, alt: product.imageAlt, width: 640, height: 480, loading: 'lazy' });
     imageWrap.append(image);
-    const onSale = Number.isFinite(product.promotionalPrice) && product.promotionalPrice < product.price;
-    if (onSale || product.tag) imageWrap.append(element('span', 'product-tag', onSale ? 'Promoção' : product.tag));
+    if (onSale(product) || product.tag) imageWrap.append(element('span', 'product-tag', onSale(product) ? 'Promoção' : product.tag));
     const copy = element('div', 'product-copy');
     copy.append(element('h3', '', product.name), element('p', '', product.description));
-    const price = element('div', 'product-price');
-    if (onSale) {
-      price.append(element('span', 'sr-only', 'Preço original: '), element('del', 'original-price', currency.format(product.price)), element('span', 'sr-only', ' Preço promocional: '));
+    copy.append(productPrice(product));
+    if (interactive) {
+      const details = element('button', 'button button-outline product-details-button', 'Ver detalhes');
+      details.type = 'button';
+      details.setAttribute('aria-label', `Ver detalhes de ${product.name}`);
+      details.addEventListener('click', () => openProduct(product.id));
+      copy.append(details);
     }
-    price.append(element('span', '', currency.format(onSale ? product.promotionalPrice : product.price)));
-    copy.append(price);
     card.append(imageWrap, copy);
     return card;
   }
 
   function storageWarning() {
     const notice = document.getElementById('storage-notice');
-    notice.textContent = 'Seu navegador não permitiu salvar a unidade. A escolha vale enquanto esta página estiver aberta.';
+    notice.textContent = 'O armazenamento local não está disponível. A unidade e o carrinho continuam funcionando nesta página, mas suas alterações podem não permanecer após recarregar.';
     notice.hidden = false;
   }
 
@@ -49,7 +67,7 @@
       const id = localStorage.getItem(storageKey);
       selectedUnit = data.units.find((unit) => unit.id === id) || null;
       if (id !== null && !selectedUnit) {
-        localStorage.removeItem(storageKey);
+        try { localStorage.removeItem(storageKey); } catch { storageWarning(); }
         return true;
       }
     } catch {
@@ -86,7 +104,7 @@
     const products = data.products.filter((product) => selectedUnit.productIds.includes(product.id)
       && (category === 'Todos' || product.category === category)
       && normalize(product.name).includes(query));
-    grid.replaceChildren(...products.map(productCard));
+    grid.replaceChildren(...products.map((product) => productCard(product, true)));
     status.textContent = products.length
       ? `${products.length} ${products.length === 1 ? 'produto encontrado' : 'produtos encontrados'} em ${selectedUnit.name}.`
       : 'Nenhum produto encontrado para sua busca. Tente outro nome ou selecione a categoria Todos.';
@@ -103,14 +121,7 @@
       const button = element('button', 'button button-primary', selected ? `Manter ${unit.city} (selecionada)` : `Selecionar ${unit.city}`);
       button.type = 'button';
       button.setAttribute('aria-pressed', String(selected));
-      button.addEventListener('click', () => {
-        selectedUnit = unit;
-        try { localStorage.setItem(storageKey, unit.id); } catch { storageWarning(); }
-        updateUnitLabel();
-        renderMenu();
-        dialog.close();
-        if (!menuView.hidden) document.getElementById('menu-title').focus();
-      });
+      button.addEventListener('click', () => requestUnitChange(unit));
       card.append(button);
       return card;
     });
@@ -118,16 +129,152 @@
     if (!dialog.open) dialog.showModal();
   }
 
+  function announce(message) {
+    const notice = document.getElementById('app-notice');
+    clearTimeout(noticeTimer);
+    notice.textContent = message;
+    noticeTimer = setTimeout(() => { notice.textContent = ''; }, 6000);
+  }
+
+  function requestUnitChange(unit) {
+    if (selectedUnit?.id !== unit.id && cart.summary().count > 0) {
+      pendingUnit = unit;
+      document.getElementById('switch-description').textContent = `Ao trocar para ${unit.name}, seu carrinho atual será esvaziado. Deseja continuar?`;
+      switchDialog.showModal();
+      return;
+    }
+    selectUnit(unit);
+  }
+
+  function selectUnit(unit) {
+    cart.changeUnit(unit.id);
+    selectedUnit = unit;
+    try { localStorage.setItem(storageKey, unit.id); } catch { storageWarning(); }
+    updateUnitLabel();
+    renderMenu();
+    renderCart();
+    dialog.close();
+    if (!menuView.hidden) document.getElementById('menu-title').focus();
+    else if (!cartView.hidden) document.getElementById('cart-title').focus();
+  }
+
+  // O mesmo controle atende detalhes e carrinho; não aceita texto ou preços do DOM.
+  function quantityControl(initial, name, onChange) {
+    let quantity = initial;
+    const group = element('div', 'quantity-control');
+    group.setAttribute('role', 'group');
+    group.setAttribute('aria-label', `Quantidade de ${name}`);
+    const minus = element('button', 'button button-outline', '−');
+    const plus = element('button', 'button button-outline', '+');
+    const value = element('output', '', String(quantity));
+    value.setAttribute('aria-label', `Quantidade de ${name}`);
+    value.setAttribute('aria-live', 'polite');
+    minus.type = plus.type = 'button';
+    minus.setAttribute('aria-label', `Diminuir quantidade de ${name}`);
+    plus.setAttribute('aria-label', `Aumentar quantidade de ${name}`);
+    function update() {
+      value.textContent = quantity;
+      minus.disabled = quantity === 1;
+      plus.disabled = quantity === maxQuantity;
+    }
+    function change(delta) {
+      const next = quantity + delta;
+      if (next < 1 || next > maxQuantity || onChange(next) === false) return;
+      quantity = next;
+      update();
+    }
+    minus.addEventListener('click', () => change(-1));
+    plus.addEventListener('click', () => change(1));
+    group.append(minus, value, plus);
+    update();
+    return group;
+  }
+
+  function openProduct(productId) {
+    const product = availableProduct(selectedUnit?.id, productId);
+    if (!product) { announce('Este produto não está disponível na unidade selecionada.'); return; }
+    detailProductId = product.id;
+    detailQuantity = 1;
+    document.getElementById('product-title').textContent = product.name;
+    Object.assign(document.getElementById('product-image'), { src: product.image, alt: product.imageAlt });
+    document.getElementById('product-category').textContent = product.category;
+    document.getElementById('product-description').textContent = product.fullDescription || product.description;
+    document.getElementById('product-detail-price').replaceChildren(productPrice(product));
+    document.getElementById('product-error').textContent = '';
+    document.getElementById('product-total').textContent = money(priceCents(product));
+    document.getElementById('product-quantity').replaceChildren(quantityControl(1, product.name, (quantity) => {
+      detailQuantity = quantity;
+      document.getElementById('product-total').textContent = money(priceCents(product) * quantity);
+      document.getElementById('product-error').textContent = '';
+    }));
+    productDialog.showModal();
+  }
+
+  function updateCartTotals() {
+    const summary = cart.summary();
+    document.getElementById('cart-count').textContent = summary.count;
+    document.getElementById('cart-link').setAttribute('aria-label', `Carrinho, ${summary.count} ${summary.count === 1 ? 'item' : 'itens'}`);
+    document.getElementById('cart-subtotal').textContent = money(summary.total);
+    document.getElementById('cart-total').textContent = money(summary.total);
+    document.getElementById('finish-order').disabled = summary.count === 0;
+  }
+
+  function cartRow(item) {
+    const row = element('article', 'cart-row');
+    row.dataset.productId = item.productId;
+    const info = element('div', 'cart-row-info');
+    info.append(element('h2', '', item.product.name), element('p', '', `Preço unitário: ${money(item.unitPrice)}`));
+    const total = element('p', 'cart-row-total', `Total: ${money(item.total)}`);
+    const controls = quantityControl(item.quantity, item.product.name, (quantity) => {
+      if (!cart.setQuantity(item.productId, quantity)) return false;
+      total.textContent = `Total: ${money(priceCents(item.product) * quantity)}`;
+      updateCartTotals();
+      announce(`Quantidade atualizada. Total do carrinho: ${money(cart.summary().total)}.`);
+    });
+    const remove = element('button', 'button button-outline remove-item', 'Remover');
+    remove.type = 'button';
+    remove.setAttribute('aria-label', `Remover ${item.product.name}`);
+    remove.addEventListener('click', () => {
+      const index = cart.summary().items.findIndex((entry) => entry.productId === item.productId);
+      cart.remove(item.productId);
+      renderCart();
+      const buttons = document.querySelectorAll('#cart-items .remove-item');
+      (buttons[Math.min(index, buttons.length - 1)] || document.querySelector('#cart-empty a')).focus();
+      announce(`${item.product.name} removido do carrinho. Total: ${money(cart.summary().total)}.`);
+    });
+    row.append(info, controls, total, remove);
+    return row;
+  }
+
+  function renderCart() {
+    const summary = cart.summary();
+    document.getElementById('cart-unit').textContent = selectedUnit
+      ? `Retirada em ${selectedUnit.name} · ${selectedUnit.city}/${selectedUnit.state}`
+      : 'Selecione uma unidade no cardápio para começar.';
+    document.getElementById('cart-empty').hidden = summary.count > 0;
+    document.getElementById('cart-content').hidden = summary.count === 0;
+    document.getElementById('cart-items').replaceChildren(...summary.items.map(cartRow));
+    updateCartTotals();
+  }
+
   function route() {
     const isMenu = location.hash === '#cardapio';
-    document.getElementById('home-view').hidden = isMenu;
+    const isCart = location.hash === '#carrinho';
+    if (productDialog.open) productDialog.close();
+    document.getElementById('home-view').hidden = isMenu || isCart;
     menuView.hidden = !isMenu;
-    document.title = isMenu ? 'Cardápio — Raízes do Nordeste' : 'Raízes do Nordeste — Sabor que acolhe';
+    cartView.hidden = !isCart;
+    document.title = isCart ? 'Carrinho — Raízes do Nordeste' : isMenu ? 'Cardápio — Raízes do Nordeste' : 'Raízes do Nordeste — Sabor que acolhe';
+    if (isCart) document.getElementById('cart-link').setAttribute('aria-current', 'page');
+    else document.getElementById('cart-link').removeAttribute('aria-current');
     document.querySelectorAll('.header-inner nav a').forEach((link) => {
       if (link.hash === location.hash || (!location.hash && link.hash === '#inicio')) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
     });
-    if (isMenu) {
+    if (isCart) {
+      renderCart();
+      document.getElementById('cart-title').focus();
+    } else if (isMenu) {
       renderMenu();
       document.getElementById('menu-title').focus();
       if (!selectedUnit) openUnitSelection();
@@ -139,7 +286,7 @@
   }
 
   document.getElementById('featured-products').replaceChildren(...data.featuredProductIds
-    .map((id) => data.products.find((product) => product.id === id)).filter(Boolean).map(productCard));
+    .map((id) => data.products.find((product) => product.id === id)).filter(Boolean).map((product) => productCard(product)));
 
   const filters = ['Todos', ...data.categories].map((name) => {
     const button = element('button', 'button button-outline', name);
@@ -161,9 +308,54 @@
       else location.hash = 'cardapio';
     });
   });
+  document.getElementById('add-to-cart').addEventListener('click', () => {
+    const error = cart.add(selectedUnit?.id, detailProductId, detailQuantity);
+    if (error) { document.getElementById('product-error').textContent = error; return; }
+    updateCartTotals();
+    productDialog.close();
+    announce(`${detailQuantity} ${detailQuantity === 1 ? 'unidade adicionada' : 'unidades adicionadas'} ao carrinho. Acesse Carrinho no cabeçalho para revisar.`);
+  });
+  document.getElementById('cancel-switch').addEventListener('click', () => switchDialog.close());
+  switchDialog.addEventListener('close', () => { pendingUnit = null; });
+  document.getElementById('confirm-switch').addEventListener('click', () => {
+    const unit = pendingUnit;
+    if (!unit) return;
+    switchDialog.close();
+    selectUnit(unit);
+    announce('Unidade alterada e carrinho esvaziado.');
+  });
+  document.getElementById('finish-order').addEventListener('click', () => {
+    if (cart.summary().count > 0) document.getElementById('checkout-notice').showModal();
+  });
+  document.querySelector('.skip-link').addEventListener('click', (event) => {
+    event.preventDefault();
+    document.getElementById('conteudo').focus();
+  });
+  // Mantém Tab/Shift+Tab nos controles do diálogo, inclusive em navegadores
+  // que deixam o foco visitar a interface do navegador ao fim do ciclo nativo.
+  document.querySelectorAll('dialog').forEach((modal) => {
+    modal.addEventListener('keydown', (event) => {
+      if (event.key !== 'Tab') return;
+      const controls = [...modal.querySelectorAll('button:not(:disabled), a[href], input:not(:disabled), [tabindex="0"]')]
+        .filter((control) => control.getClientRects().length > 0);
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (!first) return;
+      if (event.shiftKey && (document.activeElement === first || !controls.includes(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+  });
   window.addEventListener('hashchange', route);
   const invalidStoredUnit = restoreUnit();
+  const repairedCart = cart.restore(selectedUnit?.id);
   updateUnitLabel();
+  updateCartTotals();
   route();
   if (invalidStoredUnit) openUnitSelection(true);
+  if (repairedCart) announce('O carrinho salvo foi atualizado: dados inválidos ou incompatíveis com a unidade foram descartados ou corrigidos.');
 })();
