@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Conheça a Raízes do Nordeste: uma rede fictícia de lanchonetes com sabores e acolhimento nordestinos.">
+  <meta name="theme-color" content="#a84025">
+  <title>Raízes do Nordeste — Sabor que acolhe</title>
+  <link rel="icon" href="assets/images/sun.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/data.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html" aria-label="Raízes do Nordeste — início">
+        <img src="assets/images/sun.svg" width="44" height="44" alt="">
+        <span>Raízes<span class="brand-small">DO NORDESTE</span></span>
+      </a>
+      <nav aria-label="Navegação principal">
+        <a href="#destaques">Nossos sabores</a>
+        <a href="#sobre">Nossa história</a>
+      </nav>
+      <button class="button button-outline header-unit" type="button" data-feature="unit">Escolher unidade <span aria-hidden="true">↗</span></button>
+    </div>
+  </header>
+
+  <main id="conteudo" tabindex="-1">
+    <section class="hero container" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span aria-hidden="true">✳</span> DA NOSSA TERRA, PRA SUA MESA</p>
+        <h1 id="hero-title">Tempero de casa.<br>Sabor de <em>Nordeste.</em></h1>
+        <p class="hero-description">Tem coisa que abraça a gente por dentro. Uma tapioca quentinha, um recheio caprichado e aquele sabor que faz a gente se sentir em casa.</p>
+        <div class="hero-actions">
+          <button class="button button-primary" type="button" data-feature="menu">Ver cardápio <span aria-hidden="true">→</span></button>
+          <button class="button button-outline" type="button" data-feature="unit">Escolher unidade</button>
+        </div>
+        <p class="hero-note"><span aria-hidden="true">♡</span> Feito com carinho. Servido com um sorriso.</p>
+      </div>
+      <div class="hero-art">
+        <span class="art-caption">RECEITA DE AFETO</span>
+        <img class="hero-food" src="assets/images/tapioca.svg" width="640" height="480" alt="Ilustração de uma tapioca recheada com carne de sol, queijo e folhas, servida em um prato.">
+        <div class="art-stamp" aria-label="Com alma nordestina">COM ALMA<br><span>nordestina</span><span aria-hidden="true">✳</span></div>
+        <span class="art-footnote">Simples nos ingredientes. Rico em sabor.</span>
+      </div>
+    </section>
+
+    <div class="values-strip">
+      <div class="container values-inner"><span>Receitas com identidade</span><span aria-hidden="true">✳</span><span>Carinho em cada preparo</span><span aria-hidden="true">✳</span><span>Um pedacinho do Nordeste</span></div>
+    </div>
+
+    <section class="container highlights section-space" id="destaques" aria-labelledby="highlights-title">
+      <div class="section-heading"><div><p class="eyebrow">OS QUERIDINHOS DA CASA</p><h2 id="highlights-title">É de dar água na boca.</h2></div><p>Sabores da nossa terra que merecem<br class="desktop-break"> um lugar na sua próxima pausa.</p></div>
+      <div class="product-grid" id="featured-products"></div>
+      <noscript><p class="no-script">Ative o JavaScript para conhecer os produtos em destaque e acessar os avisos dos botões. Cardápio e seleção de unidade estarão disponíveis em uma próxima etapa.</p></noscript>
+      <p class="illustration-note">Imagens ilustrativas. Produtos e valores fictícios para fins acadêmicos.</p>
+    </section>
+
+    <section class="about-section" id="sobre" aria-labelledby="about-title">
+      <div class="container about-inner">
+        <div class="about-art" aria-hidden="true"><span class="about-sun">✳</span><span class="about-art-text">De onde a gente vem,<br><em>o sabor tem história.</em></span><span class="about-art-bottom">RAÍZES FORTES. MESA CHEIA.</span></div>
+        <div class="about-copy"><p class="eyebrow">MUITO PRAZER, SOMOS RAÍZES</p><h2 id="about-title">A nossa origem está<br>em cada receita.</h2><p>A Raízes do Nordeste nasceu de uma ideia simples: levar o acolhimento e os sabores nordestinos para os pequenos momentos do dia.</p><p>Somos uma rede fictícia de lanchonetes inspirada na comida que reúne, na conversa sem pressa e na hospitalidade da nossa terra. Por aqui, toda pausa tem um gostinho de encontro.</p><a class="text-link" href="#destaques">Conheça nossos sabores <span aria-hidden="true">↗</span></a></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div class="container"><div class="footer-top"><a class="brand" href="index.html"><img src="assets/images/sun.svg" width="38" height="38" alt=""><span>Raízes<span class="brand-small">DO NORDESTE</span></span></a><p>Sabor que acolhe. Raízes que conectam.</p><div class="footer-contact"><span>Contato fictício</span><span>oi@raizesdonordeste.example</span><span>Recife · Pernambuco</span></div></div><div class="footer-bottom"><span>© 2026 Raízes do Nordeste</span><span>Projeto acadêmico · Rede fictícia · Sem vendas reais</span></div></div></footer>
+
+  <dialog id="feature-dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description"><div class="dialog-body"><span class="dialog-symbol" aria-hidden="true">✳</span><p class="eyebrow">ESTAMOS PREPARANDO</p><h2 id="dialog-title">Novidades a caminho</h2><p id="dialog-description"></p><form method="dialog"><button class="button button-primary" type="submit" autofocus>Entendi</button></form></div></dialog>
+</body>
