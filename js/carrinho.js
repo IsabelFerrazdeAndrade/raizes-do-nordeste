@@ -25,8 +25,8 @@
     let state = { unitId: null, items: [] };
 
     function save() {
-      try { localStorage.setItem(storageKey, JSON.stringify(state)); }
-      catch { onStorageError(); }
+      try { localStorage.setItem(storageKey, JSON.stringify(state)); return true; }
+      catch { onStorageError(); return false; }
     }
 
     function restore(unitId) {
@@ -97,7 +97,22 @@
       };
     }
 
-    return { restore, changeUnit, add, setQuantity, remove, summary };
+    function snapshot() { return JSON.parse(JSON.stringify(state)); }
+
+    function review(unitId) {
+      if (!findUnit(unitId) || state.unitId !== unitId) return { error: 'Selecione uma unidade válida e revise o carrinho.' };
+      if (!state.items.length) return { error: 'Seu carrinho está vazio. Escolha produtos antes de continuar.' };
+      if (state.items.some((item) => !validQuantity(item.quantity) || !availableProduct(unitId, item.productId))) {
+        return { error: 'Um produto está inválido ou indisponível. Volte ao carrinho e revise os itens antes de pagar.' };
+      }
+      const result = summary();
+      if (!Number.isSafeInteger(result.total) || result.total <= 0) return { error: 'Não foi possível validar o total. Revise o carrinho.' };
+      return result;
+    }
+
+    function clear() { state.items = []; return save(); }
+
+    return { restore, changeUnit, add, setQuantity, remove, summary, snapshot, review, clear };
   }
 
   data.cart = { create, money, priceCents, onSale, availableProduct, maxQuantity };

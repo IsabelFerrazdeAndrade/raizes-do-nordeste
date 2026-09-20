@@ -10,7 +10,9 @@
   <link rel="stylesheet" href="css/style.css">
   <script src="js/data.js" defer></script>
   <script src="js/carrinho.js" defer></script>
+  <script src="js/pedidos.js" defer></script>
   <script src="js/auth.js" defer></script>
+  <script src="js/pagamento.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 <body>
@@ -137,13 +139,36 @@
       <p class="demo-disclaimer">Este perfil não é uma conta real. Edite apenas dados fictícios. As preferências abaixo não provocam envio de mensagens.</p>
       <form id="profile-form" class="identity-card profile-form" novalidate></form>
       <p id="profile-status" role="status" aria-live="polite"></p>
-      <p>Você pode encerrar a identificação ou excluir este perfil e sua preferência de marketing. O carrinho e a unidade serão mantidos.</p>
+      <p>Você pode encerrar a identificação ou excluir este perfil, sua preferência de marketing e seus pedidos demonstrativos locais. O carrinho e a unidade serão mantidos.</p>
       <div class="dialog-actions profile-actions"><button id="profile-logout" class="button button-outline" type="button">Sair</button><button id="delete-profile" class="button button-outline" type="button">Excluir meus dados locais</button></div>
       <button class="text-button" type="button" data-privacy>Privacidade demonstrativa</button>
     </section>
-    <section id="next-step-view" class="container section-space identity-view" aria-labelledby="next-step-title" hidden>
-      <p class="eyebrow">IDENTIFICAÇÃO DEMONSTRATIVA CONCLUÍDA</p><h1 id="next-step-title" tabindex="-1">O próximo passo vem aí.</h1>
-      <div class="identity-card"><p id="next-step-customer"></p><p id="next-step-summary"></p><p>O pagamento simulado e a confirmação do pedido serão implementados na Etapa 5. Nenhum pagamento foi feito e nenhum pedido foi gerado. Seus itens continuam no carrinho.</p><a class="button button-primary" href="#carrinho">Voltar ao carrinho</a><a class="text-link" href="#cardapio">Continuar comprando</a></div>
+    <section id="next-step-view" class="container section-space" aria-labelledby="next-step-title" hidden>
+      <p class="eyebrow">REVISE SUA ESCOLHA</p><h1 id="next-step-title" tabindex="-1">Finalizar pedido</h1>
+      <p class="demo-disclaimer">Pagamento demonstrativo. Nenhuma cobrança será realizada.</p>
+      <p id="checkout-error" class="field-error" role="alert"></p>
+      <div class="cart-layout checkout-layout">
+        <div class="identity-card"><h2>Retirada na unidade</h2><p id="next-step-customer"></p><p id="checkout-unit"></p><div id="checkout-items"></div><p id="next-step-summary" class="summary-total"></p><a class="text-link" href="#carrinho">Voltar ao carrinho para editar</a></div>
+        <form id="payment-form" class="identity-card" novalidate>
+          <fieldset id="payment-options"><legend>Forma de pagamento simulada</legend>
+            <label class="checkbox-label"><input type="radio" name="method" value="pix"> Pix demonstrativo</label>
+            <label class="checkbox-label"><input type="radio" name="method" value="card"> Cartão demonstrativo</label>
+            <p class="field-hint">Não informe chave Pix, número de cartão ou dados bancários.</p>
+            <div class="form-field"><label for="payment-outcome">Demonstração acadêmica: resultado da tentativa</label><select id="payment-outcome"><option value="approved">Aprovação</option><option value="declined">Recusa</option><option value="error">Erro de comunicação simulado</option></select></div>
+          </fieldset>
+          <p id="payment-status" role="status" aria-live="polite" aria-atomic="true">Pendente: escolha uma forma de pagamento.</p>
+          <span id="payment-spinner" class="payment-spinner" aria-hidden="true" hidden></span>
+          <button id="confirm-payment" class="button button-primary" type="submit">Confirmar pagamento simulado</button>
+          <p class="field-hint">Se sair desta tela ou recarregar durante o processamento, a tentativa será interrompida. Nenhuma aprovação será presumida.</p>
+        </form>
+      </div>
+    </section>
+    <section id="confirmation-view" class="container section-space" aria-labelledby="confirmation-title" hidden>
+      <p class="eyebrow">UMA ESCOLHA COM SABOR DE CASA</p><h1 id="confirmation-title" tabindex="-1">Confirmação do pedido</h1>
+      <p id="confirmation-message" role="status"></p><div id="confirmation-details" class="identity-card"></div>
+      <p class="demo-disclaimer">Pagamento demonstrativo. Nenhuma cobrança será realizada.</p>
+      <div class="dialog-actions"><a class="button button-outline" href="#inicio">Voltar ao início</a><a class="button button-primary" href="#cardapio">Ver cardápio</a><button class="button button-outline" id="track-order" type="button">Acompanhar pedido</button></div>
+      <p id="tracking-notice" role="status"></p>
     </section>
   </main>
 
@@ -195,17 +220,17 @@
     <div class="dialog-body privacy-copy">
       <h2 id="privacy-title" tabindex="-1" autofocus>Privacidade demonstrativa</h2>
       <p>Raízes do Nordeste é um projeto acadêmico. Use dados fictícios: não oferecemos criação de contas reais ou autenticação segura.</p>
-      <h3>Quais dados e para quê?</h3><p>Nome, e-mail e telefone opcional compõem o perfil demonstrativo e permitem apresentar o fluxo de identificação antes do pagamento simulado. Guardamos também a ciência da privacidade, a preferência opcional de marketing e qual perfil está ativo. A unidade escolhida e os IDs e quantidades dos produtos mantêm seu carrinho entre visitas.</p>
+      <h3>Quais dados e para quê?</h3><p>Nome, e-mail e telefone opcional compõem o perfil demonstrativo. Guardamos também um identificador local do perfil, a ciência da privacidade, a preferência opcional de marketing e qual perfil está ativo. Unidade, IDs e quantidades mantêm o carrinho entre visitas. Pedidos aprovados na simulação guardam identificadores, nome do cliente, unidade, produtos, quantidades, preços aplicados, total, data, método demonstrativo e status para mostrar a confirmação. Não coletamos dados bancários, cartão ou chave Pix.</p>
       <h3>Onde ficam?</h3><p>Esses dados ficam no armazenamento local deste navegador e desta origem, sem servidor próprio de cadastro. A aplicação não envia os dados dos formulários a serviços externos. Se o armazenamento estiver bloqueado, funciona em memória enquanto a página estiver aberta. Quem tem acesso ao navegador pode consultar, selecionar ou modificar os perfis: não há senha, proteção de conta ou criptografia de armazenamento implementada.</p>
       <h3>Marketing é uma escolha separada</h3><p>A opção começa desmarcada e não é necessária para cadastrar. A preferência apenas demonstra aceitar ou recusar comunicações. Não enviamos e-mails, SMS ou mensagens promocionais. Você pode alterá-la no perfil.</p>
-      <h3>Como editar, sair ou excluir?</h3><p>Acesse seu nome no cabeçalho para editar o perfil. “Sair” encerra a identificação e mantém o perfil disponível para seleção local. “Excluir meus dados locais” remove o perfil ativo e sua preferência de marketing e encerra a identificação. Outros perfis, a unidade e o carrinho são preservados. A conta fictícia de teste pode ser recriada se você escolher usá-la novamente.</p>
+      <h3>Como editar, sair ou excluir?</h3><p>Acesse seu nome no cabeçalho para editar o perfil. “Sair” encerra a identificação e mantém o perfil disponível para seleção local. “Excluir meus dados locais” remove os pedidos demonstrativos associados ao perfil ativo, o perfil e sua preferência de marketing e encerra a identificação. Se não for possível excluir os pedidos locais, a operação é interrompida com aviso. Outros perfis e seus pedidos, a unidade e o carrinho são preservados. A conta fictícia de teste pode ser recriada se você escolher usá-la novamente.</p>
       <p>Os dados ficam até serem excluídos pelo perfil ou pelas configurações do navegador. Limpar os dados deste site no navegador também remove os demais perfis, a unidade e o carrinho. Se uma exclusão não puder ser gravada, a interface informará a falha.</p>
       <h3>Limites desta demonstração</h3><p>Não há rastreadores, cookies de marketing ou envio promocional implementados. A hospedagem serve arquivos estáticos e pode ter seus próprios registros de acesso; este texto descreve o código da aplicação, não as práticas do provedor. Este exercício não representa garantia de conformidade jurídica integral com a LGPD nem segurança de produção.</p>
       <form method="dialog"><button class="button button-primary" type="submit">Fechar política</button></form>
     </div>
   </dialog>
   <dialog id="delete-profile-dialog" aria-labelledby="delete-profile-title" aria-describedby="delete-profile-description">
-    <div class="dialog-body"><h2 id="delete-profile-title">Excluir este perfil?</h2><p id="delete-profile-description">O perfil ativo e sua preferência de marketing serão removidos deste navegador. A identificação será encerrada. Seu carrinho, sua unidade e os outros perfis serão mantidos.</p><div class="dialog-actions"><form method="dialog"><button class="button button-outline" type="submit" autofocus>Cancelar</button></form><button id="confirm-delete-profile" class="button button-primary" type="button">Excluir perfil demonstrativo</button></div></div>
+    <div class="dialog-body"><h2 id="delete-profile-title">Excluir este perfil?</h2><p id="delete-profile-description">O perfil ativo, sua preferência de marketing e seus pedidos demonstrativos serão removidos deste navegador. A identificação será encerrada. Seu carrinho, sua unidade e os outros perfis serão mantidos.</p><div class="dialog-actions"><form method="dialog"><button class="button button-outline" type="submit" autofocus>Cancelar</button></form><button id="confirm-delete-profile" class="button button-primary" type="button">Excluir perfil demonstrativo</button></div></div>
   </dialog>
 </body>
 </html>

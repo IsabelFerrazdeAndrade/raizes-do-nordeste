@@ -843,6 +843,22 @@ button:disabled { opacity:.5; cursor:not-allowed; }
 .privacy-copy h3 { font-size:23px; margin-top:26px; }
 .privacy-copy p { margin-block:14px; font-size:14px; }
 .privacy-copy form { margin-top:24px; }
+.checkout-layout { margin-top:24px; }
+.checkout-layout .identity-card { margin:0; min-width:0; }
+.checkout-item { padding-block:18px; border-bottom:1px solid var(--line); }
+.checkout-item h3 { font-size:23px; }
+.checkout-item p { margin-top:8px; font-size:14px; }
+#next-step-title,#confirmation-title { font-size:clamp(2rem,4vw,3.4rem); }
+#payment-options { min-width:0; border:0; padding:0; margin:0; }
+#payment-options legend { font-family:var(--serif); font-size:25px; }
+#confirm-payment { width:100%; margin-top:20px; }
+#payment-status { margin-block:20px; }
+#confirmation-message,#tracking-notice { margin-top:24px; }
+#confirmation-view>.dialog-actions { margin-top:24px; }
+#confirmation-details { overflow-wrap:anywhere; }
+.payment-spinner { display:inline-block; width:24px; height:24px; border:3px solid var(--line); border-top-color:var(--orange); border-radius:50%; animation:payment-spin 1s linear infinite; }
+@keyframes payment-spin { to { transform:rotate(360deg); } }
+@media(prefers-reduced-motion:reduce) { .payment-spinner { animation:none; } }
 @media(max-width:599px) {
   .identity-card { padding:18px; }
   .account-actions { width:100%; }

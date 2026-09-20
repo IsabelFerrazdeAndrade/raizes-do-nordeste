@@ -30,8 +30,9 @@
     return { profile, errors };
   }
 
-  function init({ onStorageError, onIdentified, onExit, announce }) {
+  function init({ onStorageError, onIdentified, onExit, onDelete, announce }) {
     let state = { profiles: [], activeEmail: null };
+    let durable = false;
     const registerForm = document.getElementById('register-form');
     const profileForm = document.getElementById('profile-form');
     const profileSelect = document.getElementById('local-profile');
@@ -42,8 +43,9 @@
       try {
         if (state.profiles.length) localStorage.setItem(storageKey, JSON.stringify(state));
         else localStorage.removeItem(storageKey);
+        durable = true;
         return true;
-      } catch { onStorageError(); return false; }
+      } catch { durable = false; onStorageError(); return false; }
     }
 
     function restore() {
@@ -51,16 +53,21 @@
       try { raw = localStorage.getItem(storageKey); }
       catch { onStorageError(); return; }
       if (raw === null) return;
+      durable = true;
       let saved;
       try { saved = JSON.parse(raw); } catch { saved = null; }
       if (saved && Array.isArray(saved.profiles)) {
         const emails = new Set();
+        const ids = new Set();
         saved.profiles.forEach((record) => {
           if (!record || typeof record !== 'object' || Array.isArray(record)) return;
           if (typeof record.name !== 'string' || typeof record.email !== 'string'
             || (record.phone !== undefined && typeof record.phone !== 'string')) return;
           const { profile, errors } = validate(record);
           if (Object.keys(errors).length || emails.has(profile.email)) return;
+          profile.id = window.RaizesNordeste.orders.idPattern.test(record.id) && !ids.has(record.id)
+            ? record.id : window.RaizesNordeste.orders.newId();
+          ids.add(profile.id);
           emails.add(profile.email);
           state.profiles.push(profile);
         });
@@ -140,6 +147,7 @@
         form.elements.namedItem(name).setAttribute('aria-invalid', String(Boolean(errors[name])));
       });
       if (Object.keys(errors).length) { form.elements.namedItem(Object.keys(errors)[0]).focus(); return; }
+      profile.id = editing ? previous.id : window.RaizesNordeste.orders.newId();
       if (editing) state.profiles = state.profiles.map((item) => item.email === previous.email ? profile : item);
       else state.profiles.push(profile);
       state.activeEmail = profile.email;
@@ -204,7 +212,7 @@
       }
     });
     document.getElementById('demo-login').addEventListener('click', () => {
-      if (!state.profiles.some((profile) => profile.email === demo.email)) state.profiles.push({ ...demo });
+      if (!state.profiles.some((profile) => profile.email === demo.email)) state.profiles.push({ ...demo, id: window.RaizesNordeste.orders.newId() });
       identify(demo.email);
     });
     document.getElementById('header-logout').addEventListener('click', logout);
@@ -214,6 +222,11 @@
     });
     document.getElementById('confirm-delete-profile').addEventListener('click', () => {
       if (!active()) return;
+      if (onDelete && !onDelete(active().id)) {
+        document.getElementById('delete-profile-dialog').close();
+        document.getElementById('profile-status').textContent = 'Não foi possível excluir os pedidos locais deste perfil. A exclusão foi interrompida; confira as permissões de armazenamento do navegador.';
+        return;
+      }
       state.profiles = state.profiles.filter((profile) => profile.email !== state.activeEmail);
       state.activeEmail = null;
       const saved = persist();
@@ -221,7 +234,7 @@
       renderLocalProfiles();
       updateHeader();
       document.getElementById('delete-profile-dialog').close();
-      onExit(saved ? 'Perfil e preferência de marketing excluídos. Carrinho e unidade foram mantidos.'
+      onExit(saved ? 'Perfil, preferência de marketing e pedidos demonstrativos excluídos. Carrinho e unidade foram mantidos.'
         : 'Perfil removido desta página, mas a exclusão no armazenamento falhou. Para remover os dados persistidos, use as configurações de dados deste site no navegador.');
     });
     document.querySelectorAll('[data-privacy]').forEach((button) => {
@@ -229,7 +242,17 @@
     });
     restore();
     updateHeader();
-    return { active: () => active() ? { ...active() } : null, show };
+    function verified() {
+      const current = active();
+      if (!current || !durable) return current ? { ...current } : null;
+      try {
+        const stored = JSON.parse(localStorage.getItem(storageKey));
+        const record = stored?.profiles?.find((entry) => entry?.id === current.id && entry.email === stored.activeEmail);
+        if (!record || Object.keys(validate(record).errors).length) return null;
+        return { ...validate(record).profile, id: current.id };
+      } catch { return null; }
+    }
+    return { active: () => active() ? { ...active() } : null, verified, show };
   }
 
   window.RaizesNordeste.auth = { init };

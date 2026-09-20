@@ -1,6 +1,6 @@
 # Raízes do Nordeste
 
-Aplicação acadêmica de uma rede fictícia de lanchonetes inspirada na culinária e no acolhimento nordestinos. Contém Home, seleção de unidades, cardápio, detalhes e carrinho (Etapas 1–3), além de cadastro, login, perfil e elementos demonstrativos de privacidade (Etapa 4). Não realiza vendas reais.
+Aplicação acadêmica de uma rede fictícia de lanchonetes inspirada na culinária e no acolhimento nordestinos. Contém Home, unidades, cardápio e carrinho (Etapas 1–3), perfis demonstrativos e privacidade (Etapa 4) e checkout, pagamento simulado e confirmação do pedido (Etapa 5). Não realiza vendas ou cobranças reais.
 
 **Use somente dados fictícios. Não crie contas reais.** A identificação é uma simulação local sem senha, verificação de identidade ou autenticação segura. Qualquer pessoa com acesso ao mesmo navegador pode selecionar os perfis salvos.
 
@@ -17,12 +17,14 @@ js/data.js            # Catálogo, categorias, destaques e unidades fictícias
 js/app.js             # Navegação, seleção, persistência, renderização e filtros
 js/carrinho.js        # Regras do carrinho, validação, persistência e preços em centavos
 js/auth.js            # Perfis demonstrativos, validação, identificação e armazenamento local
+js/pagamento.js       # Serviço mockado assíncrono, checkout e confirmação
+js/pedidos.js         # Registros versionados, validação, IDs e persistência de pedidos
 assets/images/        # Ilustrações SVG próprias e substituíveis
 .gitignore            # Arquivos locais que não devem ser versionados
 README.md             # Documentação
 ```
 
-Os scripts usam `defer`, na ordem `data.js`, `carrinho.js`, `auth.js`, `app.js`. Um único namespace (`window.RaizesNordeste`) disponibiliza os módulos sem espalhar variáveis globais. Carrinho e identificação mantêm seus estados isolados. `auth.js` centraliza leitura, validação e gravação de perfis e reutiliza um template de campos para cadastro e edição. Home e cardápio compartilham o construtor de cards; detalhes e carrinho compartilham o controle de quantidade e a lógica de preços. Conteúdo dinâmico usa `textContent`, sem inserção por `innerHTML`.
+Os scripts usam `defer`, na ordem `data.js`, `carrinho.js`, `pedidos.js`, `auth.js`, `pagamento.js`, `app.js`. Um único namespace (`window.RaizesNordeste`) disponibiliza os módulos sem espalhar variáveis globais. Carrinho e identificação mantêm seus estados isolados. `auth.js` centraliza leitura, validação e gravação de perfis e reutiliza um template de campos para cadastro e edição. Home e cardápio compartilham o construtor de cards; detalhes e carrinho compartilham o controle de quantidade e a lógica de preços. Conteúdo dinâmico usa `textContent`, sem inserção por `innerHTML`.
 
 ## Como executar
 
@@ -55,7 +57,7 @@ JavaScript é necessário para produtos, cardápio, seleção, carrinho e identi
 - No carrinho, altere quantidades, confira preço unitário, total por produto, subtotal e total geral. **Remover** exclui explicitamente o item; diminuir a partir de 1 não o remove.
 - O pedido simula retirada na unidade, sem frete ou taxas. Portanto, subtotal e total são iguais.
 - **Continuar comprando** retorna ao cardápio. O carrinho vazio apresenta uma mensagem e **Voltar ao cardápio**; não permite finalizar.
-- **Finalizar pedido** inicia a identificação demonstrativa quando necessário e, depois, apresenta o aviso do pagamento da próxima etapa. Não gera pedido nem abre checkout real.
+- **Finalizar pedido** inicia a identificação demonstrativa quando necessário e abre o checkout simulado. Apenas uma aprovação salva com sucesso gera um pedido demonstrativo e limpa o carrinho.
 - Os diálogos fecham pelo botão ou Escape. Tab e Shift+Tab permanecem nos controles do diálogo; o foco retorna ao acionador. Ao remover um item, o foco segue para outro botão de remoção ou para o retorno ao cardápio, se vazio.
 
 ## Regras de troca de unidade
@@ -113,7 +115,7 @@ Em URLs `file://`, a persistência pode variar conforme as permissões do navega
 3. Teste os limites 1 e 99 nos dois controles. Com 99 no carrinho, outra adição do mesmo produto deve ser recusada sem alterar os itens.
 4. Recarregue a página e confira a unidade, quantidades e totais. Remova um item e depois o último; confira o estado vazio e a ausência de finalização disponível.
 5. Com itens, tente trocar para Salvador. Cancele e confirme a preservação; repita e confirme para esvaziar. Manter Recife não deve limpar o carrinho. Repita a troca pelo cabeçalho e pelo botão da página.
-6. Com itens, clique em **Finalizar pedido**: identifique-se se necessário e confira o aviso de que pagamento e confirmação chegarão na Etapa 5. O carrinho deve permanecer intacto.
+6. Com itens, clique em **Finalizar pedido**: identifique-se se necessário e confira o resumo no checkout. O carrinho deve permanecer intacto até a aprovação e gravação do pedido.
 7. Nas ferramentas do navegador, altere `raizesNordeste.cart` para JSON inválido e recarregue. Teste também produto inexistente, produto indisponível (`suco-graviola` em Recife), quantidade negativa, zero, fracionária ou acima de 99. Entradas inválidas não devem aparecer no carrinho.
 8. Adicione um campo `price` adulterado a um item salvo: o preço exibido deve continuar vindo do catálogo. Altere a unidade do carrinho salvo para outra: os itens devem ser descartados ao restaurar.
 9. Teste teclado, fechamento por botão e Escape, retorno do foco e Tab/Shift+Tab nos diálogos. No celular, verifique rolagem vertical dos detalhes e acesso a todos os controles, inclusive em paisagem.
@@ -138,7 +140,7 @@ Para entrar sem preencher o cadastro, use **Usar conta de demonstração**:
 
 O perfil de teste é criado localmente quando esse botão é usado. Se já houver um perfil com esse e-mail, ele será selecionado. Também é possível escolher qualquer perfil local no formulário de entrada; isso não comprova a identidade de ninguém. Não há provedores externos, tokens, senhas persistidas ou criptografia de senhas.
 
-Após identificar-se, o cabeçalho mostra o primeiro nome. Clique nele para acessar o **Perfil demonstrativo**, onde é possível alterar nome, e-mail, telefone e marketing. **Sair** encerra a identificação, mas conserva o perfil para seleção futura. **Excluir meus dados locais** pede confirmação, remove o perfil ativo e sua preferência de marketing e encerra a identificação. Outros perfis, o carrinho e a unidade não são excluídos. A conta fictícia pode ser recriada ao selecionar novamente o botão de demonstração.
+Após identificar-se, o cabeçalho mostra o primeiro nome. Clique nele para acessar o **Perfil demonstrativo**, onde é possível alterar nome, e-mail, telefone e marketing. **Sair** encerra a identificação, mas conserva o perfil para seleção futura. **Excluir meus dados locais** pede confirmação, remove os pedidos demonstrativos do perfil, o perfil ativo e sua preferência de marketing e encerra a identificação. Se a remoção dos pedidos falhar, a exclusão é interrompida com aviso. Outros perfis e seus pedidos, o carrinho e a unidade não são excluídos. A conta fictícia pode ser recriada ao selecionar novamente o botão de demonstração.
 
 ## Dados locais e privacidade
 
@@ -147,12 +149,14 @@ Após identificar-se, o cabeçalho mostra o primeiro nome. Clique nele para aces
 | `raizesNordeste.unitId` | Unidade selecionada para o cardápio. |
 | `raizesNordeste.cart` | Unidade, IDs e quantidades dos itens do carrinho. |
 | `raizesNordeste.identity` | Perfis demonstrativos, ciência de privacidade, preferência de marketing e e-mail do perfil ativo. |
+| `raizesNordeste.orders` | Envelope versionado com pedidos aprovados, preços históricos e marcador de limpeza do carrinho. |
 
 Exemplo do estado de identificação (sem senhas ou tokens):
 
 ```json
 {
   "profiles": [{
+    "id": "8d8f2c45-d18e-4eb3-9985-51124f5d5e81",
     "name": "Pessoa Fictícia",
     "email": "pessoa@exemplo.test",
     "phone": "",
@@ -173,9 +177,9 @@ Os dados ficam neste navegador e nesta origem até serem removidos. Não há sin
 
 ## Identificação a partir do carrinho
 
-Com itens, **Finalizar pedido** leva a `#entrar?origem=carrinho` se não houver perfil ativo. A origem acompanha o link para cadastro e permanece na URL após recarregar, sem expor dados do cliente. Após entrar ou cadastrar, o fluxo continua em `#finalizacao`, com nome, unidade, quantidade de itens, total vigente e o aviso da Etapa 5. A identificação não altera o estado do carrinho nem seus preços.
+Com itens, **Finalizar pedido** leva a `#entrar?origem=carrinho` se não houver perfil ativo. A origem acompanha o link para cadastro e permanece na URL após recarregar, sem expor dados do cliente. Após entrar ou cadastrar, o fluxo continua no checkout em `#finalizacao`. A identificação não altera o estado do carrinho nem seus preços.
 
-Se já houver perfil ativo, o fluxo chega diretamente a essa tela intermediária. Acesso direto sem perfil solicita identificação; sem itens, retorna ao carrinho com mensagem. Nenhum pedido é gerado. Pelo cabeçalho, cadastro e login retornam à Home. Sair ou excluir um perfil mantém a unidade e os itens.
+Se já houver perfil ativo, o fluxo chega diretamente ao checkout. Acesso direto sem perfil solicita identificação; sem itens, retorna ao carrinho com mensagem. Pelo cabeçalho, cadastro e login retornam à Home. Sair ou excluir um perfil mantém a unidade e os itens e impede concluir uma tentativa em andamento.
 
 ## Como testar a Etapa 4
 
@@ -184,7 +188,7 @@ Se já houver perfil ativo, o fluxo chega diretamente a essa tela intermediária
 3. Recarregue e confira a identificação preservada. Entre no perfil, edite nome, e-mail e telefone e aceite/recuse marketing. Salve e recarregue para conferir a persistência.
 4. Saia e tente cadastrar o mesmo e-mail, inclusive com maiúsculas: deve haver erro de duplicidade. Entre escolhendo o perfil local. Teste também o botão da conta fictícia.
 5. Preencha parte do cadastro, abra a política e feche por Escape. O foco deve retornar ao botão e os campos devem permanecer preenchidos. Confira também o acesso pelo rodapé e o ciclo de Tab/Shift+Tab.
-6. Adicione duas porções de baião em Recife e confira R$ 47,80. Sem identificação, finalize e faça cadastro ou login. A tela intermediária deve manter 2 itens, R$ 47,80 e Recife. Repita já identificado.
+6. Adicione duas porções de baião em Recife e confira R$ 47,80. Sem identificação, finalize e faça cadastro ou login. O checkout deve manter 2 itens, R$ 47,80 e Recife. Repita já identificado.
 7. Saia ou exclua o perfil e confira que unidade e carrinho permanecem. Cancele a exclusão antes de confirmar para testar os dois caminhos. Outros perfis devem continuar disponíveis.
 8. Em DevTools, altere `raizesNordeste.identity` para JSON inválido ou inclua um perfil inválido/e-mail ativo inexistente; recarregue e confira a recuperação. Não devem aparecer senhas, tokens ou dados de pagamentos no armazenamento.
 9. Teste em 320, 375, 768, 1024 e 1440 px, com teclado e zoom. Confira campos, erros, botões e política sem rolagem horizontal. O carrinho vazio não deve avançar.
@@ -197,6 +201,77 @@ Também foram verificados Home, busca/filtros, detalhes e carrinho; cadastro e o
 
 Entrada, cadastro e perfil foram verificados entre 320 e 1440 px, inclusive com nome longo, sem rolagem horizontal. Política, ciclo de foco, Escape e preservação do formulário foram testados. Abertura direta e HTTP em subdiretório foram exercitados. Não foram observados erros JavaScript nos testes concluídos. Não houve testes em aparelhos físicos, leitores de tela, Safari ou Firefox.
 
+## Etapa 5: checkout e pagamento demonstrativo
+
+O checkout apresenta cliente, unidade, produtos, quantidades, preços unitários, totais por produto e total geral. A modalidade é **Retirada na unidade**, sem frete, delivery ou endereço residencial. **Voltar ao carrinho para editar** permite revisar os itens antes de pagar.
+
+Unidade, identificação, produtos, disponibilidade, quantidades e valores são revalidados no início e ao receber o resultado. Os valores são recalculados em centavos a partir do catálogo; preços do HTML ou do carrinho salvo não são usados. Se os dados mudarem durante a revisão ou o processamento, a tentativa é bloqueada e pede revisão. Itens indisponíveis são identificados no carrinho e podem ser removidos explicitamente.
+
+Escolha **Pix demonstrativo** ou **Cartão demonstrativo**. Não há campos de cartão, CVV, validade, CPF, chave Pix ou dados bancários. O aviso é explícito: **Pagamento demonstrativo. Nenhuma cobrança será realizada.**
+
+No seletor **Demonstração acadêmica: resultado da tentativa**, escolha:
+
+| Resultado | Comportamento esperado |
+| --- | --- |
+| Aprovação | Salva um pedido, limpa o carrinho e abre a confirmação, preservando unidade e identificação. |
+| Recusa | Não cria pedido nem limpa o carrinho; permite trocar o método e tentar novamente. |
+| Erro de comunicação simulado | Não presume aprovação; exibe erro, preserva o carrinho e permite tentar novamente. |
+
+`pagamento.js` usa uma `Promise` e atraso de aproximadamente 1,1 segundo, sem requisições HTTP. A interface passa por Pendente, Processando e o resultado explícito. Durante o processamento, botão, métodos e seletor de resultado ficam desabilitados; uma trava lógica também impede envios repetidos. Há indicador visual, `aria-busy` e mensagem em `aria-live`.
+
+Sair da tela, sair do perfil ou recarregar interrompe a tentativa sem presumir aprovação. Alterações de dados relevantes em outra aba recarregam esta interface e interrompem a tentativa. O retorno assíncrono de uma tentativa cancelada não cria pedido. A identificação é verificada novamente antes da gravação.
+
+## Estrutura e persistência dos pedidos
+
+`js/pedidos.js` concentra leitura, validação e gravação em `raizesNordeste.orders`:
+
+```json
+{
+  "version": 1,
+  "orders": [{
+    "id": "f6e4aa12-682a-496c-8676-a5c23cfeb056",
+    "attemptId": "54232f71-76ce-4918-a0df-ea538764ba08",
+    "number": "PED-20260920-0001",
+    "createdAt": "2026-09-20T12:00:00.000Z",
+    "customer": { "id": "8d8f2c45-d18e-4eb3-9985-51124f5d5e81", "name": "Pessoa Fictícia" },
+    "unit": { "id": "recife", "name": "Raízes Recife", "address": "Endereço fictício da unidade" },
+    "items": [{ "productId": "baiao-dois", "name": "Baião de dois", "quantity": 2, "unitPrice": 2390 }],
+    "total": 4780,
+    "method": "pix",
+    "paymentStatus": "aprovado",
+    "status": "Recebido"
+  }],
+  "pendingClear": null
+}
+```
+
+Valores monetários são inteiros em centavos. Nome, unidade, produtos e preços são fotografias dos dados aplicados na compra; a confirmação não depende do preço atual do catálogo. Data é salva em ISO e exibida em pt-BR no horário local do navegador. O número legível é sequencial por data entre os pedidos locais existentes. UUIDs identificam internamente o pedido e a tentativa; salvar novamente o mesmo `attemptId` retorna o registro existente.
+
+Perfis antigos recebem um UUID na restauração. O identificador permanece ao editar e-mail, evitando transferir pedidos a outro perfil com o mesmo e-mail. A confirmação em `#confirmacao?pedido=UUID` só mostra pedidos vinculados ao perfil ativo. Isso organiza a demonstração, mas **não é controle de acesso seguro**: o navegador e seus dados locais são manipuláveis.
+
+O pedido é salvo antes da limpeza do carrinho. `pendingClear` é gravado junto ao pedido e permite recuperar uma limpeza interrompida: no próximo acesso, somente um carrinho que ainda corresponda aos itens comprados é esvaziado. Um carrinho diferente é preservado. Falhas de gravação do pedido mantêm o carrinho e não exibem confirmação; falhas posteriores na limpeza informam que o pedido foi salvo, mas existe uma pendência local. O registro versionado é validado, incluindo valores, status e unicidade. JSON corrompido ou versão desconhecida bloqueia leitura/gravação de pedidos com mensagem, sem substituir silenciosamente o conteúdo.
+
+Excluir o perfil remove também seus pedidos demonstrativos locais, conforme a política atualizada. Sair apenas encerra a identificação e não exclui pedidos. O armazenamento é demonstrativo, sem garantia transacional de servidor, sincronização entre dispositivos ou resistência a adulteração. Para dados corrompidos, revise ou remova a chave de pedidos pelas ferramentas do navegador, sabendo que isso elimina os registros locais.
+
+## Como testar a Etapa 5
+
+1. Execute abrindo `index.html` ou via Live Server. Selecione Recife, adicione duas porções de baião e confira R$ 47,80.
+2. Clique em **Finalizar pedido**. Sem perfil, entre com a conta fictícia ou cadastre um perfil; o checkout deve preservar itens e total.
+3. Tente confirmar sem método: deve solicitar Pix ou cartão. Escolha um método e **Recusa**; confira processamento, desbloqueio, ausência de pedido e preservação do carrinho.
+4. Selecione **Erro de comunicação simulado** e tente novamente: confira erro, carrinho intacto e possibilidade de nova tentativa.
+5. Selecione **Aprovação** e confirme. Tente clicar duas vezes: apenas um pedido deve ser salvo. Confira número, data, unidade, cliente, itens, valores, método, status Recebido e carrinho vazio.
+6. Recarregue a confirmação: o pedido deve continuar visível. Repita uma compra com o outro método e confira números diferentes. **Acompanhar pedido** deve apenas informar sobre a Etapa 6.
+7. Recarregue ou saia durante Processando: nenhum pedido deve ser criado por essa tentativa. Carrinho e unidade devem permanecer.
+8. Teste a identificação de outro perfil: o endereço de confirmação do primeiro não deve mostrar seus dados. Editar o e-mail do perfil original mantém o vínculo.
+9. Em DevTools, simule falha de gravação para `raizesNordeste.orders`: não deve aparecer sucesso e o carrinho deve permanecer. Falhas apenas ao gravar a limpeza do carrinho devem mostrar pendência, recuperável ao recarregar com armazenamento disponível.
+10. Teste checkout e confirmação em 320, 375, 768, 1024 e 1440 px. Navegue por teclado e confira mensagens de estado, foco, labels e ausência de rolagem horizontal.
+
+### Verificações executadas na Etapa 5
+
+Testes automatizados com Playwright e Edge headless, por arquivo local e HTTP em subdiretório: fluxo de identificação, cálculo promocional, método obrigatório, Pix e cartão, processamento e bloqueio, recusa, erro, nova tentativa, aprovação, duplo envio e idempotência por tentativa, persistência da confirmação, números únicos e aviso de acompanhamento.
+
+Também foram verificados interrupção por recarga/saída, alteração de preços e disponibilidade, falha ao salvar pedido, recuperação de limpeza do carrinho, JSON/versão inválidos, preços históricos, vínculo após edição de e-mail, isolamento entre perfis e remoção de pedidos ao excluir perfil. Checkout e confirmação foram testados de 320 a 1440 px, sem rolagem horizontal. Não houve erros JavaScript nos testes concluídos nem requisições externas de pagamento. Outros navegadores e aparelhos físicos não foram testados.
+
 ## Planejado para próximas etapas
 
-A **Etapa 5** será dedicada a pagamento simulado e confirmação do pedido. A tela intermediária já recebe o perfil demonstrativo e o resumo do carrinho, sem implementar pagamento, Pix, cartão ou geração de pedidos. Acompanhamento, fidelidade, recompensas, cupons e modo Totem permanecem fora desta etapa. A estrutura continua estática, sem npm, back-end ou autenticação real.
+A **Etapa 6** será dedicada a acompanhamento dos pedidos e fidelidade. Não há acompanhamento completo, atualização automática de status, pontos, resgate, cupons ou modo Totem nesta versão. A aplicação continua estática, sem npm, back-end, pagamento real ou autenticação segura.

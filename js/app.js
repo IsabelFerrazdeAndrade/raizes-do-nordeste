@@ -18,6 +18,7 @@
   let pendingUnit = null;
   let noticeTimer;
   let identity;
+  let payment;
 
   function element(tag, className, text) {
     const node = document.createElement(tag);
@@ -148,6 +149,7 @@
   }
 
   function selectUnit(unit) {
+    payment?.cancel();
     cart.changeUnit(unit.id);
     selectedUnit = unit;
     try { localStorage.setItem(storageKey, unit.id); } catch { storageWarning(); }
@@ -218,7 +220,7 @@
     document.getElementById('cart-link').setAttribute('aria-label', `Carrinho, ${summary.count} ${summary.count === 1 ? 'item' : 'itens'}`);
     document.getElementById('cart-subtotal').textContent = money(summary.total);
     document.getElementById('cart-total').textContent = money(summary.total);
-    document.getElementById('finish-order').disabled = summary.count === 0;
+    document.getElementById('finish-order').disabled = Boolean(cart.review(selectedUnit?.id).error);
   }
 
   function cartRow(item) {
@@ -250,12 +252,22 @@
 
   function renderCart() {
     const summary = cart.summary();
+    const invalid = cart.snapshot().items.filter((item) => !summary.items.some((entry) => entry.productId === item.productId));
     document.getElementById('cart-unit').textContent = selectedUnit
       ? `Retirada em ${selectedUnit.name} · ${selectedUnit.city}/${selectedUnit.state}`
       : 'Selecione uma unidade no cardápio para começar.';
-    document.getElementById('cart-empty').hidden = summary.count > 0;
-    document.getElementById('cart-content').hidden = summary.count === 0;
+    document.getElementById('cart-empty').hidden = summary.count > 0 || invalid.length > 0;
+    document.getElementById('cart-content').hidden = summary.count === 0 && invalid.length === 0;
     document.getElementById('cart-items').replaceChildren(...summary.items.map(cartRow));
+    invalid.forEach((item) => {
+      const row = element('article', 'cart-row');
+      row.append(element('h2', '', 'Item indisponível'), element('p', '', `O produto ${item.productId} não está disponível. Remova-o para continuar.`));
+      const remove = element('button', 'button button-outline', 'Remover item indisponível');
+      remove.type = 'button';
+      remove.addEventListener('click', () => { cart.remove(item.productId); renderCart(); document.getElementById('cart-title').focus(); });
+      row.append(remove);
+      document.getElementById('cart-items').append(row);
+    });
     updateCartTotals();
   }
 
@@ -272,20 +284,24 @@
   }
 
   function identityEnded(message) {
+    payment?.cancel();
     document.getElementById('next-step-customer').textContent = '';
     document.getElementById('identity-feedback').textContent = message;
     navigate('#inicio');
   }
 
   function route() {
+    payment.cancel();
     const [view, queryString = ''] = location.hash.slice(1).split('?');
     const identityViews = {
       entrar: ['login-view', 'login-title'], cadastro: ['register-view', 'register-title'],
-      perfil: ['profile-view', 'profile-title'], finalizacao: ['next-step-view', 'next-step-title']
+      perfil: ['profile-view', 'profile-title'], finalizacao: ['next-step-view', 'next-step-title'],
+      confirmacao: ['confirmation-view', 'confirmation-title']
     };
     if (view === 'perfil' && !identity.active()) { navigate('#entrar', true); return; }
     if (view === 'finalizacao') {
-      if (!cart.summary().count) { announce('Seu carrinho está vazio. Escolha produtos antes de continuar.'); navigate('#carrinho', true); return; }
+      if (!selectedUnit) { navigate('#cardapio', true); return; }
+      if (!cart.snapshot().items.length) { announce('Seu carrinho está vazio. Escolha produtos antes de continuar.'); navigate('#carrinho', true); return; }
       if (!identity.active()) { navigate('#entrar?origem=carrinho', true); return; }
     }
     const isMenu = view === 'cardapio';
@@ -313,10 +329,9 @@
       });
       identity.show(view);
       if (view === 'finalizacao') {
-        const summary = cart.summary();
-        document.getElementById('next-step-customer').textContent = `${identity.active().name}, seu perfil demonstrativo está identificado.`;
-        document.getElementById('next-step-summary').textContent = `${summary.count} ${summary.count === 1 ? 'item' : 'itens'} · Total: ${money(summary.total)} · Retirada em ${selectedUnit.name}.`;
+        payment.showCheckout();
       }
+      if (view === 'confirmacao') payment.showConfirmation(new URLSearchParams(queryString).get('pedido'));
       const title = document.getElementById(identityView[1]);
       document.title = `${title.textContent} — Raízes do Nordeste`;
       title.focus();
@@ -400,12 +415,23 @@
     });
   });
   window.addEventListener('hashchange', route);
-  identity = data.auth.init({ onStorageError: storageWarning, onIdentified: completeIdentification, onExit: identityEnded, announce });
+  identity = data.auth.init({ onStorageError: storageWarning, onIdentified: completeIdentification, onExit: identityEnded, announce,
+    onDelete: (id) => { try { data.orders.removeCustomer(id); return true; } catch { return false; } }
+  });
   const invalidStoredUnit = restoreUnit();
   const repairedCart = cart.restore(selectedUnit?.id);
+  payment = data.payment.init({ cart, getCustomer: () => identity.verified(), getUnit: () => selectedUnit, navigate, announce, onCartChanged: updateCartTotals });
+  payment.recover();
+  if (repairedCart && location.hash.startsWith('#finalizacao')) history.replaceState(null, '', '#carrinho');
   updateUnitLabel();
   updateCartTotals();
   route();
   if (invalidStoredUnit) openUnitSelection(true);
   if (repairedCart) announce('O carrinho salvo foi atualizado: dados inválidos ou incompatíveis com a unidade foram descartados ou corrigidos.');
+  window.addEventListener('storage', (event) => {
+    if (event.key === null || ['raizesNordeste.identity', 'raizesNordeste.cart', 'raizesNordeste.unitId', 'raizesNordeste.orders'].includes(event.key)) {
+      payment.cancel();
+      location.reload();
+    }
+  });
 })();
