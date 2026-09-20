@@ -17,6 +17,7 @@
   let detailQuantity = 1;
   let pendingUnit = null;
   let noticeTimer;
+  let identity;
 
   function element(tag, className, text) {
     const node = document.createElement(tag);
@@ -58,7 +59,7 @@
 
   function storageWarning() {
     const notice = document.getElementById('storage-notice');
-    notice.textContent = 'O armazenamento local não está disponível. A unidade e o carrinho continuam funcionando nesta página, mas suas alterações podem não permanecer após recarregar.';
+    notice.textContent = 'O armazenamento local não está disponível. Unidade, carrinho e perfis continuam funcionando nesta página, mas alterações ou exclusões podem não permanecer após recarregar.';
     notice.hidden = false;
   }
 
@@ -156,6 +157,7 @@
     dialog.close();
     if (!menuView.hidden) document.getElementById('menu-title').focus();
     else if (!cartView.hidden) document.getElementById('cart-title').focus();
+    if (location.hash === '#finalizacao') navigate('#carrinho');
   }
 
   // O mesmo controle atende detalhes e carrinho; não aceita texto ou preços do DOM.
@@ -257,13 +259,43 @@
     updateCartTotals();
   }
 
+  function navigate(hash, replace = false) {
+    if (location.hash === hash) route();
+    else if (replace) { history.replaceState(null, '', hash); route(); }
+    else location.hash = hash;
+  }
+
+  function completeIdentification() {
+    document.getElementById('identity-feedback').textContent = '';
+    const query = new URLSearchParams(location.hash.split('?')[1] || '');
+    navigate(query.get('origem') === 'carrinho' ? '#finalizacao' : '#inicio');
+  }
+
+  function identityEnded(message) {
+    document.getElementById('next-step-customer').textContent = '';
+    document.getElementById('identity-feedback').textContent = message;
+    navigate('#inicio');
+  }
+
   function route() {
-    const isMenu = location.hash === '#cardapio';
-    const isCart = location.hash === '#carrinho';
+    const [view, queryString = ''] = location.hash.slice(1).split('?');
+    const identityViews = {
+      entrar: ['login-view', 'login-title'], cadastro: ['register-view', 'register-title'],
+      perfil: ['profile-view', 'profile-title'], finalizacao: ['next-step-view', 'next-step-title']
+    };
+    if (view === 'perfil' && !identity.active()) { navigate('#entrar', true); return; }
+    if (view === 'finalizacao') {
+      if (!cart.summary().count) { announce('Seu carrinho está vazio. Escolha produtos antes de continuar.'); navigate('#carrinho', true); return; }
+      if (!identity.active()) { navigate('#entrar?origem=carrinho', true); return; }
+    }
+    const isMenu = view === 'cardapio';
+    const isCart = view === 'carrinho';
+    const identityView = identityViews[view];
     if (productDialog.open) productDialog.close();
-    document.getElementById('home-view').hidden = isMenu || isCart;
+    document.getElementById('home-view').hidden = isMenu || isCart || Boolean(identityView);
     menuView.hidden = !isMenu;
     cartView.hidden = !isCart;
+    Object.entries(identityViews).forEach(([key, [id]]) => { document.getElementById(id).hidden = key !== view; });
     document.title = isCart ? 'Carrinho — Raízes do Nordeste' : isMenu ? 'Cardápio — Raízes do Nordeste' : 'Raízes do Nordeste — Sabor que acolhe';
     if (isCart) document.getElementById('cart-link').setAttribute('aria-current', 'page');
     else document.getElementById('cart-link').removeAttribute('aria-current');
@@ -271,7 +303,24 @@
       if (link.hash === location.hash || (!location.hash && link.hash === '#inicio')) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
     });
-    if (isCart) {
+    if (identityView) {
+      const origin = new URLSearchParams(queryString).get('origem') === 'carrinho' ? '?origem=carrinho' : '';
+      document.getElementById('register-link').href = `#cadastro${origin}`;
+      document.getElementById('login-link').href = `#entrar${origin}`;
+      document.querySelectorAll('.identity-return').forEach((link) => {
+        link.href = origin ? '#carrinho' : '#inicio';
+        link.textContent = origin ? 'Voltar ao carrinho' : 'Voltar ao início';
+      });
+      identity.show(view);
+      if (view === 'finalizacao') {
+        const summary = cart.summary();
+        document.getElementById('next-step-customer').textContent = `${identity.active().name}, seu perfil demonstrativo está identificado.`;
+        document.getElementById('next-step-summary').textContent = `${summary.count} ${summary.count === 1 ? 'item' : 'itens'} · Total: ${money(summary.total)} · Retirada em ${selectedUnit.name}.`;
+      }
+      const title = document.getElementById(identityView[1]);
+      document.title = `${title.textContent} — Raízes do Nordeste`;
+      title.focus();
+    } else if (isCart) {
       renderCart();
       document.getElementById('cart-title').focus();
     } else if (isMenu) {
@@ -325,7 +374,7 @@
     announce('Unidade alterada e carrinho esvaziado.');
   });
   document.getElementById('finish-order').addEventListener('click', () => {
-    if (cart.summary().count > 0) document.getElementById('checkout-notice').showModal();
+    navigate('#finalizacao');
   });
   document.querySelector('.skip-link').addEventListener('click', (event) => {
     event.preventDefault();
@@ -351,6 +400,7 @@
     });
   });
   window.addEventListener('hashchange', route);
+  identity = data.auth.init({ onStorageError: storageWarning, onIdentified: completeIdentification, onExit: identityEnded, announce });
   const invalidStoredUnit = restoreUnit();
   const repairedCart = cart.restore(selectedUnit?.id);
   updateUnitLabel();

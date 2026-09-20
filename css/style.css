@@ -48,7 +48,7 @@ button {
   cursor:pointer;
 }
 
-a:focus-visible,button:focus-visible,input:focus-visible {
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible {
   outline:3px solid #245a69;
   outline-offset:5px;
 }
@@ -799,4 +799,51 @@ button:disabled { opacity:.5; cursor:not-allowed; }
   * {
     transition:none!important;
   }
+}
+
+/* Identificação inteiramente demonstrativa, integrada aos estilos existentes. */
+.header-inner { flex-wrap:wrap; }
+.account-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px; max-width:100%; }
+#account-link { max-width:220px; overflow-wrap:anywhere; min-width:0; }
+.identity-view { max-width:720px; }
+.identity-view h1 { font-size:clamp(2.2rem,4vw,3.4rem); }
+.identity-view h2 { font-size:25px; }
+.identity-card { padding:24px; margin-block:24px; background:var(--paper); border:1px solid var(--line); border-radius:8px; }
+.identity-card>p { margin-block:16px; overflow-wrap:anywhere; }
+.identity-card>.button { margin-top:12px; }
+.identity-card>.text-link { display:flex; }
+.demo-disclaimer { padding:18px; margin-top:24px; border-left:4px solid var(--orange); background:#f0e8d9; font-size:14px; }
+.form-field { margin-block:20px; min-width:0; }
+.form-field label { display:block; margin-bottom:8px; font-size:14px; font-weight:bold; }
+.form-field input,.form-field select {
+  display:block;
+  width:100%;
+  min-width:0;
+  min-height:48px;
+  padding:12px;
+  border:1px solid #ae9880;
+  border-radius:5px;
+  background:var(--paper);
+  color:var(--ink);
+  font:inherit;
+}
+.form-field [aria-invalid="true"] { border:2px solid var(--orange-dark); }
+.field-error:not(:empty) { color:var(--orange-dark); font-weight:bold; font-size:13px; margin-top:8px; }
+.field-hint { color:var(--muted); font-size:13px; margin-top:8px; }
+.checkbox-label { display:flex; align-items:flex-start; gap:12px; margin-top:20px; padding-block:8px; cursor:pointer; font-size:14px; }
+.checkbox-label input { width:22px; height:22px; flex-shrink:0; margin:0; accent-color:var(--orange); }
+.form-submit { width:100%; margin-top:24px; }
+.text-button { display:inline-flex; align-items:center; min-height:44px; border:0; background:transparent; padding:8px 0; font:inherit; color:var(--orange-dark); text-decoration:underline; text-underline-offset:4px; text-align:left; }
+.identity-return { display:flex; width:fit-content; }
+.identity-view p .text-link { margin-top:0; }
+.profile-actions { margin-block:24px; }
+.identity-feedback:not(:empty) { margin-block:20px; padding:16px; border:1px solid var(--line); border-radius:5px; background:#f0e8d9; }
+#profile-status:not(:empty) { padding:16px; border:1px solid var(--line); margin-bottom:24px; }
+#privacy-dialog { width:min(720px,calc(100% - 32px)); }
+.privacy-copy h3 { font-size:23px; margin-top:26px; }
+.privacy-copy p { margin-block:14px; font-size:14px; }
+.privacy-copy form { margin-top:24px; }
+@media(max-width:599px) {
+  .identity-card { padding:18px; }
+  .account-actions { width:100%; }
 }
