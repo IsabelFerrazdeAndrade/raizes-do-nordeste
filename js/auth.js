@@ -224,7 +224,7 @@
       if (!active()) return;
       if (onDelete && !onDelete(active().id)) {
         document.getElementById('delete-profile-dialog').close();
-        document.getElementById('profile-status').textContent = 'Não foi possível excluir os pedidos locais deste perfil. A exclusão foi interrompida; confira as permissões de armazenamento do navegador.';
+        document.getElementById('profile-status').textContent = 'Não foi possível excluir os pedidos e resgates locais deste perfil. A exclusão foi interrompida; confira as permissões de armazenamento do navegador.';
         return;
       }
       state.profiles = state.profiles.filter((profile) => profile.email !== state.activeEmail);
@@ -234,7 +234,7 @@
       renderLocalProfiles();
       updateHeader();
       document.getElementById('delete-profile-dialog').close();
-      onExit(saved ? 'Perfil, preferência de marketing e pedidos demonstrativos excluídos. Carrinho e unidade foram mantidos.'
+      onExit(saved ? 'Perfil, preferência de marketing, pedidos, pontos e resgates demonstrativos excluídos. Carrinho e unidade foram mantidos.'
         : 'Perfil removido desta página, mas a exclusão no armazenamento falhou. Para remover os dados persistidos, use as configurações de dados deste site no navegador.');
     });
     document.querySelectorAll('[data-privacy]').forEach((button) => {

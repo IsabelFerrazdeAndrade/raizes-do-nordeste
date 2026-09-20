@@ -19,6 +19,7 @@
   let noticeTimer;
   let identity;
   let payment;
+  let loyalty;
 
   function element(tag, className, text) {
     const node = document.createElement(tag);
@@ -280,7 +281,13 @@
   function completeIdentification() {
     document.getElementById('identity-feedback').textContent = '';
     const query = new URLSearchParams(location.hash.split('?')[1] || '');
-    navigate(query.get('origem') === 'carrinho' ? '#finalizacao' : '#inicio');
+    navigate(query.get('origem') === 'carrinho' ? '#finalizacao' : safeReturn(query.get('retorno')) || '#inicio');
+  }
+
+  function safeReturn(value) {
+    if (value === '#pedidos' || value === '#fidelidade') return value;
+    if (typeof value === 'string' && /^#pedido\?pedido=[a-f0-9-]{36}$/i.test(value)) return value;
+    return '';
   }
 
   function identityEnded(message) {
@@ -292,12 +299,18 @@
 
   function route() {
     payment.cancel();
+    const rewardDialog = document.getElementById('reward-dialog');
+    if (rewardDialog.open) rewardDialog.close();
     const [view, queryString = ''] = location.hash.slice(1).split('?');
     const identityViews = {
       entrar: ['login-view', 'login-title'], cadastro: ['register-view', 'register-title'],
       perfil: ['profile-view', 'profile-title'], finalizacao: ['next-step-view', 'next-step-title'],
-      confirmacao: ['confirmation-view', 'confirmation-title']
+      confirmacao: ['confirmation-view', 'confirmation-title'], pedidos: ['orders-view', 'orders-title'],
+      pedido: ['order-view', 'order-title'], fidelidade: ['loyalty-view', 'loyalty-title']
     };
+    if (['pedidos', 'pedido', 'fidelidade'].includes(view) && !identity.verified()) {
+      navigate(`#entrar?retorno=${encodeURIComponent(safeReturn(location.hash) || '#pedidos')}`, true); return;
+    }
     if (view === 'perfil' && !identity.active()) { navigate('#entrar', true); return; }
     if (view === 'finalizacao') {
       if (!selectedUnit) { navigate('#cardapio', true); return; }
@@ -320,18 +333,23 @@
       else link.removeAttribute('aria-current');
     });
     if (identityView) {
-      const origin = new URLSearchParams(queryString).get('origem') === 'carrinho' ? '?origem=carrinho' : '';
+      const params = new URLSearchParams(queryString);
+      const returnTo = safeReturn(params.get('retorno'));
+      const origin = params.get('origem') === 'carrinho' ? '?origem=carrinho' : returnTo ? `?retorno=${encodeURIComponent(returnTo)}` : '';
       document.getElementById('register-link').href = `#cadastro${origin}`;
       document.getElementById('login-link').href = `#entrar${origin}`;
       document.querySelectorAll('.identity-return').forEach((link) => {
-        link.href = origin ? '#carrinho' : '#inicio';
-        link.textContent = origin ? 'Voltar ao carrinho' : 'Voltar ao início';
+        link.href = params.get('origem') === 'carrinho' ? '#carrinho' : '#inicio';
+        link.textContent = params.get('origem') === 'carrinho' ? 'Voltar ao carrinho' : 'Voltar ao início';
       });
       identity.show(view);
       if (view === 'finalizacao') {
         payment.showCheckout();
       }
       if (view === 'confirmacao') payment.showConfirmation(new URLSearchParams(queryString).get('pedido'));
+      if (view === 'pedidos') loyalty.showOrders();
+      if (view === 'pedido') loyalty.showOrder(params.get('pedido'));
+      if (view === 'fidelidade') loyalty.showLoyalty();
       const title = document.getElementById(identityView[1]);
       document.title = `${title.textContent} — Raízes do Nordeste`;
       title.focus();
@@ -421,6 +439,7 @@
   const invalidStoredUnit = restoreUnit();
   const repairedCart = cart.restore(selectedUnit?.id);
   payment = data.payment.init({ cart, getCustomer: () => identity.verified(), getUnit: () => selectedUnit, navigate, announce, onCartChanged: updateCartTotals });
+  loyalty = data.loyalty.init({ getCustomer: () => identity.verified() });
   payment.recover();
   if (repairedCart && location.hash.startsWith('#finalizacao')) history.replaceState(null, '', '#carrinho');
   updateUnitLabel();

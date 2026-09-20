@@ -1,6 +1,6 @@
 # Raízes do Nordeste
 
-Aplicação acadêmica de uma rede fictícia de lanchonetes inspirada na culinária e no acolhimento nordestinos. Contém Home, unidades, cardápio e carrinho (Etapas 1–3), perfis demonstrativos e privacidade (Etapa 4) e checkout, pagamento simulado e confirmação do pedido (Etapa 5). Não realiza vendas ou cobranças reais.
+Aplicação acadêmica de uma rede fictícia de lanchonetes inspirada na culinária e no acolhimento nordestinos. Contém Home, unidades, cardápio e carrinho (Etapas 1–3), perfis demonstrativos e privacidade (Etapa 4), checkout e pagamento simulado (Etapa 5), acompanhamento de pedidos e fidelidade demonstrativa (Etapa 6). Não realiza vendas ou cobranças reais.
 
 **Use somente dados fictícios. Não crie contas reais.** A identificação é uma simulação local sem senha, verificação de identidade ou autenticação segura. Qualquer pessoa com acesso ao mesmo navegador pode selecionar os perfis salvos.
 
@@ -18,13 +18,14 @@ js/app.js             # Navegação, seleção, persistência, renderização e 
 js/carrinho.js        # Regras do carrinho, validação, persistência e preços em centavos
 js/auth.js            # Perfis demonstrativos, validação, identificação e armazenamento local
 js/pagamento.js       # Serviço mockado assíncrono, checkout e confirmação
-js/pedidos.js         # Registros versionados, validação, IDs e persistência de pedidos
+js/pedidos.js         # Pedidos, status, pontos derivados e persistência de resgates
+js/fidelidade.js      # Interfaces de pedidos, acompanhamento e fidelidade
 assets/images/        # Ilustrações SVG próprias e substituíveis
 .gitignore            # Arquivos locais que não devem ser versionados
 README.md             # Documentação
 ```
 
-Os scripts usam `defer`, na ordem `data.js`, `carrinho.js`, `pedidos.js`, `auth.js`, `pagamento.js`, `app.js`. Um único namespace (`window.RaizesNordeste`) disponibiliza os módulos sem espalhar variáveis globais. Carrinho e identificação mantêm seus estados isolados. `auth.js` centraliza leitura, validação e gravação de perfis e reutiliza um template de campos para cadastro e edição. Home e cardápio compartilham o construtor de cards; detalhes e carrinho compartilham o controle de quantidade e a lógica de preços. Conteúdo dinâmico usa `textContent`, sem inserção por `innerHTML`.
+Os scripts usam `defer`, na ordem `data.js`, `carrinho.js`, `pedidos.js`, `auth.js`, `pagamento.js`, `fidelidade.js`, `app.js`. Um único namespace (`window.RaizesNordeste`) disponibiliza os módulos sem espalhar variáveis globais. Carrinho e identificação mantêm seus estados isolados. `auth.js` centraliza leitura, validação e gravação de perfis e reutiliza um template de campos para cadastro e edição. Home e cardápio compartilham o construtor de cards; detalhes e carrinho compartilham o controle de quantidade e a lógica de preços. Confirmação e acompanhamento reutilizam a apresentação dos dados históricos do pedido. Conteúdo dinâmico usa `textContent`, sem inserção por `innerHTML`.
 
 ## Como executar
 
@@ -140,7 +141,7 @@ Para entrar sem preencher o cadastro, use **Usar conta de demonstração**:
 
 O perfil de teste é criado localmente quando esse botão é usado. Se já houver um perfil com esse e-mail, ele será selecionado. Também é possível escolher qualquer perfil local no formulário de entrada; isso não comprova a identidade de ninguém. Não há provedores externos, tokens, senhas persistidas ou criptografia de senhas.
 
-Após identificar-se, o cabeçalho mostra o primeiro nome. Clique nele para acessar o **Perfil demonstrativo**, onde é possível alterar nome, e-mail, telefone e marketing. **Sair** encerra a identificação, mas conserva o perfil para seleção futura. **Excluir meus dados locais** pede confirmação, remove os pedidos demonstrativos do perfil, o perfil ativo e sua preferência de marketing e encerra a identificação. Se a remoção dos pedidos falhar, a exclusão é interrompida com aviso. Outros perfis e seus pedidos, o carrinho e a unidade não são excluídos. A conta fictícia pode ser recriada ao selecionar novamente o botão de demonstração.
+Após identificar-se, o cabeçalho mostra o primeiro nome. Clique nele para acessar o **Perfil demonstrativo**, onde é possível alterar nome, e-mail, telefone e marketing. **Sair** encerra a identificação, mas conserva o perfil para seleção futura. **Excluir meus dados locais** pede confirmação, remove os pedidos e resgates demonstrativos do perfil e seus pontos derivados, o perfil ativo e sua preferência de marketing e encerra a identificação. Se a remoção dos pedidos e resgates falhar, a exclusão é interrompida com aviso. Outros perfis, seus pedidos e resgates, o carrinho e a unidade não são excluídos. A conta fictícia pode ser recriada ao selecionar novamente o botão de demonstração.
 
 ## Dados locais e privacidade
 
@@ -149,7 +150,7 @@ Após identificar-se, o cabeçalho mostra o primeiro nome. Clique nele para aces
 | `raizesNordeste.unitId` | Unidade selecionada para o cardápio. |
 | `raizesNordeste.cart` | Unidade, IDs e quantidades dos itens do carrinho. |
 | `raizesNordeste.identity` | Perfis demonstrativos, ciência de privacidade, preferência de marketing e e-mail do perfil ativo. |
-| `raizesNordeste.orders` | Envelope versionado com pedidos aprovados, preços históricos e marcador de limpeza do carrinho. |
+| `raizesNordeste.orders` | Envelope versionado com pedidos aprovados, preços históricos, status, resgates e marcador de limpeza do carrinho. O saldo é calculado, não armazenado. |
 
 Exemplo do estado de identificação (sem senhas ou tokens):
 
@@ -251,7 +252,7 @@ Perfis antigos recebem um UUID na restauração. O identificador permanece ao ed
 
 O pedido é salvo antes da limpeza do carrinho. `pendingClear` é gravado junto ao pedido e permite recuperar uma limpeza interrompida: no próximo acesso, somente um carrinho que ainda corresponda aos itens comprados é esvaziado. Um carrinho diferente é preservado. Falhas de gravação do pedido mantêm o carrinho e não exibem confirmação; falhas posteriores na limpeza informam que o pedido foi salvo, mas existe uma pendência local. O registro versionado é validado, incluindo valores, status e unicidade. JSON corrompido ou versão desconhecida bloqueia leitura/gravação de pedidos com mensagem, sem substituir silenciosamente o conteúdo.
 
-Excluir o perfil remove também seus pedidos demonstrativos locais, conforme a política atualizada. Sair apenas encerra a identificação e não exclui pedidos. O armazenamento é demonstrativo, sem garantia transacional de servidor, sincronização entre dispositivos ou resistência a adulteração. Para dados corrompidos, revise ou remova a chave de pedidos pelas ferramentas do navegador, sabendo que isso elimina os registros locais.
+Excluir o perfil remove também seus pedidos e resgates demonstrativos locais e os pontos derivados, conforme a política atualizada. Sair apenas encerra a identificação e não exclui pedidos. O armazenamento é demonstrativo, sem garantia transacional de servidor, sincronização entre dispositivos ou resistência a adulteração. Para dados corrompidos, revise ou remova a chave de pedidos pelas ferramentas do navegador, sabendo que isso elimina os registros locais.
 
 ## Como testar a Etapa 5
 
@@ -260,7 +261,7 @@ Excluir o perfil remove também seus pedidos demonstrativos locais, conforme a p
 3. Tente confirmar sem método: deve solicitar Pix ou cartão. Escolha um método e **Recusa**; confira processamento, desbloqueio, ausência de pedido e preservação do carrinho.
 4. Selecione **Erro de comunicação simulado** e tente novamente: confira erro, carrinho intacto e possibilidade de nova tentativa.
 5. Selecione **Aprovação** e confirme. Tente clicar duas vezes: apenas um pedido deve ser salvo. Confira número, data, unidade, cliente, itens, valores, método, status Recebido e carrinho vazio.
-6. Recarregue a confirmação: o pedido deve continuar visível. Repita uma compra com o outro método e confira números diferentes. **Acompanhar pedido** deve apenas informar sobre a Etapa 6.
+6. Recarregue a confirmação: o pedido deve continuar visível. Repita uma compra com o outro método e confira números diferentes. **Acompanhar pedido** abre os detalhes e a linha do tempo implementados na Etapa 6.
 7. Recarregue ou saia durante Processando: nenhum pedido deve ser criado por essa tentativa. Carrinho e unidade devem permanecer.
 8. Teste a identificação de outro perfil: o endereço de confirmação do primeiro não deve mostrar seus dados. Editar o e-mail do perfil original mantém o vínculo.
 9. Em DevTools, simule falha de gravação para `raizesNordeste.orders`: não deve aparecer sucesso e o carrinho deve permanecer. Falhas apenas ao gravar a limpeza do carrinho devem mostrar pendência, recuperável ao recarregar com armazenamento disponível.
@@ -272,6 +273,47 @@ Testes automatizados com Playwright e Edge headless, por arquivo local e HTTP em
 
 Também foram verificados interrupção por recarga/saída, alteração de preços e disponibilidade, falha ao salvar pedido, recuperação de limpeza do carrinho, JSON/versão inválidos, preços históricos, vínculo após edição de e-mail, isolamento entre perfis e remoção de pedidos ao excluir perfil. Checkout e confirmação foram testados de 320 a 1440 px, sem rolagem horizontal. Não houve erros JavaScript nos testes concluídos nem requisições externas de pagamento. Outros navegadores e aparelhos físicos não foram testados.
 
+## Etapa 6: pedidos e fidelidade
+
+No perfil, acesse **Meus pedidos** ou **Minha fidelidade**. A lista apresenta somente os pedidos do perfil identificado, do mais recente para o mais antigo, com número, data, unidade, total, método e status. Sem pedidos, há uma mensagem e acesso ao cardápio. Acesso sem identificação solicita login ou cadastro e preserva a rota solicitada, inclusive o pedido específico.
+
+**Ver detalhes** e **Acompanhar pedido**, na confirmação, abrem os mesmos dados históricos: cliente, unidade e endereço para retirada, produtos, quantidades, preços registrados, total, pagamento e status. Alterações no catálogo não modificam compras anteriores.
+
+A linha do tempo mostra **Recebido → Em preparação → Pronto para retirada**, com textos de etapa concluída, atual e pendente. **Simular próxima etapa do pedido** avança somente nessa ordem, salva o estado e fica desabilitado ao chegar ao final. Não altera o pagamento nem os valores. Não há comunicação com cozinha ou atualização automática.
+
+### Pontos e resgates
+
+Cada pedido aprovado gera `Math.floor(totalEmCentavos / 100)` pontos. O arredondamento é feito por pedido: R$ 25,90 e R$ 68,50 geram 25 + 68 = 93 pontos. O saldo é a soma desses pontos menos 100 por resgate registrado. Pedidos válidos da Etapa 5 também contam; recarregar, consultar telas e sair/entrar não adiciona pontos. Recusas, erros e carrinhos abandonados não criam pedidos aprovados nem pontos.
+
+Há uma recompensa: **100 pontos = benefício demonstrativo de R$ 10,00**. Com saldo insuficiente, a tela informa quantos pontos faltam e desabilita o botão. Com saldo suficiente, **Resgatar recompensa** abre confirmação; cancelar ou Escape preserva o saldo. Confirmar valida novamente o saldo e o perfil e registra um único resgate, mesmo com duplo clique. O histórico mostra data, pontos, benefício e identificador. O benefício não tem valor real e não aplica desconto no checkout.
+
+O envelope `version: 1` de pedidos aceita agora `redemptions`, uma lista de registros `{id, requestId, customerId, createdAt, points: 100, benefitCents: 1000}`. Registros antigos sem essa propriedade são lidos como lista vazia. UUIDs identificam o resgate e sua solicitação; repetir a mesma solicitação retorna o registro existente. Pedidos e resgates compartilham uma única gravação local, sem saldo redundante. Onde disponível, Web Locks serializa confirmações de resgate entre abas. Isso não substitui transações ou segurança de servidor.
+
+JSON inválido, pedidos incompletos, valores inválidos, resgates duplicados ou saldo inconsistente bloqueiam as operações com mensagem, sem sobrescrever silenciosamente os dados. Falhas de gravação não confirmam o resgate. A interface também impede consultar ou avançar um pedido de outro perfil.
+
+**Sair** conserva pedidos, pontos e recompensas. **Excluir meus dados locais** remove pedidos e resgates do perfil ativo, seus pontos derivados, perfil e preferências, preservando outros perfis e seus registros, carrinho e unidade. A política de privacidade e o diálogo de exclusão descrevem esses dados. Armazenamento local continua manipulável e sem autenticação segura ou sincronização entre dispositivos.
+
+### Como testar a Etapa 6
+
+1. Selecione Recife e compre cinco porções de baião de dois em promoção: R$ 119,50. Aprove o pagamento simulado e abra **Acompanhar pedido**. Confira status Recebido, total histórico e retirada.
+2. Avance duas vezes. Confira as três etapas e o botão desabilitado no final. Recarregue: o status deve continuar Pronto para retirada e o pagamento aprovado.
+3. Abra o perfil e **Meus pedidos**. Confira ordenação e detalhes. Em **Minha fidelidade**, sem outras compras/resgates, confira 119 pontos.
+4. Cancele um resgate e confira saldo inalterado. Confirme outro, inclusive tentando duplo clique: deve existir um benefício de R$ 10,00 e saldo de 19 pontos. Recarregue e confira o mesmo histórico e botão desabilitado.
+5. Saia e entre novamente: os dados devem permanecer. Acesse as rotas `#pedidos`, `#pedido?pedido=UUID` e `#fidelidade` sem identificação e confira o retorno após login/cadastro.
+6. Use outro perfil fictício: não deve visualizar pedidos ou pontos do primeiro. Exclua um perfil com pedidos e resgates e confira que somente os dados vinculados a ele foram removidos.
+7. Repita pagamento recusado ou com erro: nenhum pedido/ponto deve ser criado. Confira que o carrinho permanece disponível.
+8. Em F12, ative a simulação de dispositivos e teste 320, 375, 768, 1024 e 1440 px. Confira lista, detalhes, linha do tempo e fidelidade sem rolagem horizontal. Teste Tab, Shift+Tab, Enter, Escape e foco visível.
+
+### Verificações executadas na Etapa 6
+
+Automação com Playwright e Edge headless, sem dependências adicionadas ao projeto: compra pelo cardápio/carrinho, login de demonstração, pagamento recusado e aprovado, acompanhamento pela confirmação, avanço e persistência dos status, limite final, pagamento preservado, pontuação, duplo clique no resgate, saldo insuficiente, persistência e ausência de erros JavaScript.
+
+Também foram usados registros de teste para verificar compatibilidade com pedidos antigos, arredondamento por pedido, ordenação, preços históricos após mudar o catálogo, rejeição de avanço com status desatualizado, idempotência por solicitação, falha de gravação, JSON inválido, pedido incompleto, quantidade negativa e resgate duplicado sem sobrescrever os registros. Cadastro e login preservaram a rota solicitada; isolamento, saída e exclusão seletiva de pedidos/resgates passaram. Home, pedidos, detalhes e fidelidade foram verificados em 320, 375, 768, 1024 e 1440 px sem rolagem horizontal. Escape e retorno do foco no resgate foram verificados.
+
+Abertura por arquivo local e HTTP em subdiretório passou, com recursos locais e sem requisições externas. O ciclo de Tab/Shift+Tab, confirmação por Enter e foco após resgate também foram verificados; a tela móvel foi inspecionada visualmente.
+
+Não foram testados leitores de tela, aparelhos físicos, Safari ou Firefox. Os resultados não constituem certificação de acessibilidade ou segurança.
+
 ## Planejado para próximas etapas
 
-A **Etapa 6** será dedicada a acompanhamento dos pedidos e fidelidade. Não há acompanhamento completo, atualização automática de status, pontos, resgate, cupons ou modo Totem nesta versão. A aplicação continua estática, sem npm, back-end, pagamento real ou autenticação segura.
+A **Etapa 7** será dedicada ao modo Totem e aos ajustes de responsividade. O Totem não está implementado. A aplicação continua estática, sem npm, back-end, pagamento real, autenticação segura, cozinha integrada ou notificações externas.

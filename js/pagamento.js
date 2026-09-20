@@ -2,7 +2,6 @@
   'use strict';
   const data = window.RaizesNordeste;
   const { money } = data.cart;
-  const methodName = (method) => method === 'pix' ? 'Pix demonstrativo' : 'Cartão demonstrativo';
 
   // Serviço externo fictício: não faz requisições nem recebe dados financeiros.
   function simulate({ method, outcome, attemptId }) {
@@ -156,17 +155,15 @@
         message.textContent = store.pendingClear === order.id
           ? 'Pedido demonstrativo registrado. A limpeza persistente do carrinho está pendente; confira o armazenamento e recarregue antes de comprar novamente.'
           : 'Pagamento aprovado na simulação. Seu pedido demonstrativo foi registrado!';
-        details.append(node('h2', order.number), node('p', new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(order.createdAt))),
-          node('p', `Cliente: ${order.customer.name}`), node('p', `Retirada em ${order.unit.name} · ${order.unit.address}`));
-        const list = node('div', '');
-        renderItems(list, order.items);
-        details.append(list, node('p', `Total pago na simulação: ${money(order.total)}`, 'summary-total'), node('p', `Forma de pagamento: ${methodName(order.method)}`), node('p', 'Pagamento: Aprovado · Status do pedido: Recebido'));
+        data.orders.renderDetails(details, order);
+        track.dataset.orderId = order.id;
         track.hidden = false;
       } catch { message.textContent = 'Não foi possível ler os pedidos locais. O registro pode estar inválido ou o armazenamento indisponível. Nenhum pedido foi presumido como confirmado.'; }
     }
     form.addEventListener('submit', pay);
     document.getElementById('track-order').addEventListener('click', () => {
-      document.getElementById('tracking-notice').textContent = 'O acompanhamento completo do pedido e a fidelidade serão desenvolvidos na Etapa 6.';
+      const id = document.getElementById('track-order').dataset.orderId;
+      if (data.orders.idPattern.test(id)) navigate(`#pedido?pedido=${id}`);
     });
     return { showCheckout, showConfirmation, cancel, recover };
   }

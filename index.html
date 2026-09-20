@@ -13,6 +13,7 @@
   <script src="js/pedidos.js" defer></script>
   <script src="js/auth.js" defer></script>
   <script src="js/pagamento.js" defer></script>
+  <script src="js/fidelidade.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 <body>
@@ -135,11 +136,12 @@
       <a class="text-link identity-return" href="#inicio">Voltar ao início</a>
     </section>
     <section id="profile-view" class="container section-space identity-view" aria-labelledby="profile-title" hidden>
+      <nav class="dialog-actions" aria-label="Área do cliente"><a class="button button-outline" href="#pedidos">Meus pedidos</a><a class="button button-outline" href="#fidelidade">Minha fidelidade</a></nav>
       <p class="eyebrow">SEUS DADOS NESTE NAVEGADOR</p><h1 id="profile-title" tabindex="-1">Perfil demonstrativo</h1>
       <p class="demo-disclaimer">Este perfil não é uma conta real. Edite apenas dados fictícios. As preferências abaixo não provocam envio de mensagens.</p>
       <form id="profile-form" class="identity-card profile-form" novalidate></form>
       <p id="profile-status" role="status" aria-live="polite"></p>
-      <p>Você pode encerrar a identificação ou excluir este perfil, sua preferência de marketing e seus pedidos demonstrativos locais. O carrinho e a unidade serão mantidos.</p>
+      <p>Você pode encerrar a identificação ou excluir este perfil, sua preferência de marketing e seus pedidos e resgates demonstrativos locais, incluindo os pontos calculados. O carrinho e a unidade serão mantidos.</p>
       <div class="dialog-actions profile-actions"><button id="profile-logout" class="button button-outline" type="button">Sair</button><button id="delete-profile" class="button button-outline" type="button">Excluir meus dados locais</button></div>
       <button class="text-button" type="button" data-privacy>Privacidade demonstrativa</button>
     </section>
@@ -169,6 +171,25 @@
       <p class="demo-disclaimer">Pagamento demonstrativo. Nenhuma cobrança será realizada.</p>
       <div class="dialog-actions"><a class="button button-outline" href="#inicio">Voltar ao início</a><a class="button button-primary" href="#cardapio">Ver cardápio</a><button class="button button-outline" id="track-order" type="button">Acompanhar pedido</button></div>
       <p id="tracking-notice" role="status"></p>
+    </section>
+    <section id="orders-view" class="container section-space" aria-labelledby="orders-title" hidden>
+      <p class="eyebrow">SEUS ENCONTROS COM O NOSSO SABOR</p><h1 id="orders-title" tabindex="-1">Meus pedidos</h1>
+      <p id="orders-message" role="status"></p><div id="orders-list" class="orders-list"></div>
+      <div class="dialog-actions"><a class="button button-primary" href="#cardapio">Ver cardápio</a><a class="button button-outline" href="#fidelidade">Minha fidelidade</a></div>
+    </section>
+    <section id="order-view" class="container section-space" aria-labelledby="order-title" hidden>
+      <p class="eyebrow">DA NOSSA COZINHA PARA VOCÊ</p><h1 id="order-title" tabindex="-1">Acompanhar pedido</h1>
+      <p id="order-message" role="status" aria-live="polite"></p>
+      <ol id="order-timeline" class="order-timeline" aria-label="Progresso do pedido"></ol>
+      <div id="order-details" class="identity-card"></div>
+      <div class="demo-disclaimer"><p>Simulação acadêmica: não há comunicação com uma cozinha real, notificações ou alteração automática de status.</p><button id="advance-order" class="button button-primary" type="button" hidden>Simular próxima etapa do pedido</button></div>
+      <div class="dialog-actions"><a class="button button-outline" href="#pedidos">Meus pedidos</a><a class="button button-outline" href="#fidelidade">Minha fidelidade</a></div>
+    </section>
+    <section id="loyalty-view" class="container section-space identity-view" aria-labelledby="loyalty-title" hidden>
+      <p class="eyebrow">CADA SABOR CONTA</p><h1 id="loyalty-title" tabindex="-1">Minha fidelidade</h1>
+      <p id="loyalty-customer"></p><p id="loyalty-message" role="status" aria-live="polite"></p>
+      <div class="identity-card"><h2 id="loyalty-balance">Saldo de pontos</h2><p>A cada R$ 1,00 de compra aprovada, você recebe 1 ponto. A parte fracionária é desprezada em cada pedido.</p><p>100 pontos = benefício demonstrativo de R$ 10,00.</p><p id="loyalty-missing"></p><button id="redeem-reward" class="button button-primary" type="button" disabled>Resgatar recompensa</button><p class="field-hint">O benefício é apenas registrado. Não é aplicado no checkout, não altera compras anteriores e não tem valor real.</p></div>
+      <h2>Seus resgates</h2><div id="redemptions-list"></div><a class="text-link" href="#pedidos">Meus pedidos</a>
     </section>
   </main>
 
@@ -220,17 +241,20 @@
     <div class="dialog-body privacy-copy">
       <h2 id="privacy-title" tabindex="-1" autofocus>Privacidade demonstrativa</h2>
       <p>Raízes do Nordeste é um projeto acadêmico. Use dados fictícios: não oferecemos criação de contas reais ou autenticação segura.</p>
-      <h3>Quais dados e para quê?</h3><p>Nome, e-mail e telefone opcional compõem o perfil demonstrativo. Guardamos também um identificador local do perfil, a ciência da privacidade, a preferência opcional de marketing e qual perfil está ativo. Unidade, IDs e quantidades mantêm o carrinho entre visitas. Pedidos aprovados na simulação guardam identificadores, nome do cliente, unidade, produtos, quantidades, preços aplicados, total, data, método demonstrativo e status para mostrar a confirmação. Não coletamos dados bancários, cartão ou chave Pix.</p>
+      <h3>Quais dados e para quê?</h3><p>Nome, e-mail e telefone opcional compõem o perfil demonstrativo. Guardamos também um identificador local do perfil, a ciência da privacidade, a preferência opcional de marketing e qual perfil está ativo. Unidade, IDs e quantidades mantêm o carrinho entre visitas. Pedidos aprovados na simulação guardam identificadores, nome do cliente, unidade, produtos, quantidades, preços aplicados, total, data, método demonstrativo e status para mostrar a confirmação e o acompanhamento. Os pontos são calculados a partir dos pedidos aprovados. Resgates guardam identificador, perfil, data, pontos utilizados e benefício demonstrativo para exibir o saldo e o histórico. Não coletamos dados bancários, cartão ou chave Pix.</p>
       <h3>Onde ficam?</h3><p>Esses dados ficam no armazenamento local deste navegador e desta origem, sem servidor próprio de cadastro. A aplicação não envia os dados dos formulários a serviços externos. Se o armazenamento estiver bloqueado, funciona em memória enquanto a página estiver aberta. Quem tem acesso ao navegador pode consultar, selecionar ou modificar os perfis: não há senha, proteção de conta ou criptografia de armazenamento implementada.</p>
       <h3>Marketing é uma escolha separada</h3><p>A opção começa desmarcada e não é necessária para cadastrar. A preferência apenas demonstra aceitar ou recusar comunicações. Não enviamos e-mails, SMS ou mensagens promocionais. Você pode alterá-la no perfil.</p>
-      <h3>Como editar, sair ou excluir?</h3><p>Acesse seu nome no cabeçalho para editar o perfil. “Sair” encerra a identificação e mantém o perfil disponível para seleção local. “Excluir meus dados locais” remove os pedidos demonstrativos associados ao perfil ativo, o perfil e sua preferência de marketing e encerra a identificação. Se não for possível excluir os pedidos locais, a operação é interrompida com aviso. Outros perfis e seus pedidos, a unidade e o carrinho são preservados. A conta fictícia de teste pode ser recriada se você escolher usá-la novamente.</p>
+      <h3>Como editar, sair ou excluir?</h3><p>Acesse seu nome no cabeçalho para editar o perfil. “Sair” encerra a identificação e mantém o perfil disponível para seleção local. “Excluir meus dados locais” remove os pedidos e resgates demonstrativos associados ao perfil ativo, eliminando também os pontos derivados, o perfil e sua preferência de marketing e encerra a identificação. Se não for possível excluir os pedidos e resgates locais, a operação é interrompida com aviso. Outros perfis, seus pedidos e resgates, a unidade e o carrinho são preservados. A conta fictícia de teste pode ser recriada se você escolher usá-la novamente.</p>
       <p>Os dados ficam até serem excluídos pelo perfil ou pelas configurações do navegador. Limpar os dados deste site no navegador também remove os demais perfis, a unidade e o carrinho. Se uma exclusão não puder ser gravada, a interface informará a falha.</p>
       <h3>Limites desta demonstração</h3><p>Não há rastreadores, cookies de marketing ou envio promocional implementados. A hospedagem serve arquivos estáticos e pode ter seus próprios registros de acesso; este texto descreve o código da aplicação, não as práticas do provedor. Este exercício não representa garantia de conformidade jurídica integral com a LGPD nem segurança de produção.</p>
       <form method="dialog"><button class="button button-primary" type="submit">Fechar política</button></form>
     </div>
   </dialog>
   <dialog id="delete-profile-dialog" aria-labelledby="delete-profile-title" aria-describedby="delete-profile-description">
-    <div class="dialog-body"><h2 id="delete-profile-title">Excluir este perfil?</h2><p id="delete-profile-description">O perfil ativo, sua preferência de marketing e seus pedidos demonstrativos serão removidos deste navegador. A identificação será encerrada. Seu carrinho, sua unidade e os outros perfis serão mantidos.</p><div class="dialog-actions"><form method="dialog"><button class="button button-outline" type="submit" autofocus>Cancelar</button></form><button id="confirm-delete-profile" class="button button-primary" type="button">Excluir perfil demonstrativo</button></div></div>
+    <div class="dialog-body"><h2 id="delete-profile-title">Excluir este perfil?</h2><p id="delete-profile-description">O perfil ativo, sua preferência de marketing e seus pedidos e resgates demonstrativos, incluindo os pontos calculados, serão removidos deste navegador. A identificação será encerrada. Seu carrinho, sua unidade e os outros perfis serão mantidos.</p><div class="dialog-actions"><form method="dialog"><button class="button button-outline" type="submit" autofocus>Cancelar</button></form><button id="confirm-delete-profile" class="button button-primary" type="button">Excluir perfil demonstrativo</button></div></div>
+  </dialog>
+  <dialog id="reward-dialog" aria-labelledby="reward-title" aria-describedby="reward-description">
+    <div class="dialog-body"><h2 id="reward-title">Resgatar recompensa?</h2><p id="reward-description">Serão deduzidos 100 pontos para registrar um benefício demonstrativo de R$ 10,00. Nenhum desconto será aplicado no checkout.</p><div class="dialog-actions"><form method="dialog"><button class="button button-outline" type="submit" autofocus>Cancelar</button></form><button class="button button-primary" id="confirm-reward" type="button">Confirmar resgate</button></div></div>
   </dialog>
 </body>
 </html>
