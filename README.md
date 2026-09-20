@@ -2,6 +2,8 @@
 
 Aplicação acadêmica de uma rede fictícia de lanchonetes inspirada na culinária e no acolhimento nordestinos. Contém Home, unidades, cardápio e carrinho (Etapas 1–3), perfis demonstrativos e privacidade (Etapa 4), checkout e pagamento simulado (Etapa 5), acompanhamento de pedidos e fidelidade demonstrativa (Etapa 6) e modo Totem com ajustes responsivos (Etapa 7). Não realiza vendas ou cobranças reais.
 
+**Etapa 8:** revisão final implementada e testes locais concluídos conforme a matriz ao final deste README. Publicação no GitHub Pages e validações em outros navegadores/aparelhos permanecem pendentes. Nenhum deploy foi executado nesta revisão.
+
 **Use somente dados fictícios. Não crie contas reais.** A identificação é uma simulação local sem senha, verificação de identidade ou autenticação segura. Qualquer pessoa com acesso ao mesmo navegador pode selecionar os perfis salvos.
 
 ## Tecnologias
@@ -11,7 +13,7 @@ HTML5 semântico, CSS3 (Mobile-first, Grid e Flexbox) e JavaScript puro. Sem fra
 ## Estrutura
 
 ```text
-index.html            # Home, cardápio, carrinho, identificação, perfil e diálogos
+index.html            # Telas Web/Totem e diálogos compartilhados
 css/style.css         # Identidade visual e responsividade
 js/data.js            # Catálogo, categorias, destaques e unidades fictícias
 js/app.js             # Navegação, seleção, persistência, renderização e filtros
@@ -376,6 +378,113 @@ Abra `index.html` ou use Live Server. Ative **Modo Totem**, inicie, selecione Re
 
 Repita com recusa, troca de unidade e cancelamento do encerramento. Teste a saída para Web com itens e confirme que há um aviso antes do descarte. Em F12, use o modo de dispositivos nas resoluções da tabela, alternando orientação, e confira a navegação por teclado e o acesso aos botões inferiores dos diálogos.
 
-## Planejado para próximas etapas
+## Etapa 8: revisão final
 
-A **Etapa 8** será dedicada à revisão final, aos testes complementares e à publicação no GitHub Pages. A publicação ainda não foi realizada. A aplicação continua estática, sem npm, back-end, pagamento real, autenticação segura, cozinha integrada ou notificações externas.
+A revisão começou com o Git sem alterações locais e analisou os arquivos, a documentação e as dependências entre módulos. Foram mantidos os fluxos e as regras existentes, sem adicionar funcionalidades, dependências ou arquivos de execução. Não foram feitos commits, pushes, criação/troca de branches, alterações remotas ou publicação.
+
+### Problemas reproduzidos e correções
+
+| Problema observado antes da correção | Correção aplicada | Verificação |
+| --- | --- | --- |
+| Fragmentos como `#constructor`, `#toString` e `#__proto__` eram interpretados como propriedades herdadas do mapa de rotas e causavam erro JavaScript. | `app.js` consulta somente propriedades próprias do mapa; rotas desconhecidas mostram a Home. | T08: todas essas rotas abriram sem erro. |
+| O foco ia para o corpo da página ao desabilitar o botão no último estágio do pedido. | `fidelidade.js` mantém o foco no botão após o primeiro avanço e no título após o estágio final. | T20: foco, status e persistência conferidos. |
+| Identificadores contendo 36 hífens eram aceitos como UUIDs; valores de tipo array também podiam passar por conversão implícita. | `pedidos.js` valida formato e tipo dos identificadores; `auth.js` também exige string ao recuperar o UUID do perfil. Números de pedido precisam ser texto. | T25: registros inválidos foram bloqueados sem sobrescrever os dados. |
+| Bordas de campos/botões tinham contraste de aproximadamente 2,58:1 contra o fundo creme. | `style.css` compartilha uma cor mais escura para as bordas de controles, preservando a identidade visual. | T35: contraste de 4,16:1 contra o creme; foco visível mantido. |
+
+Os pedidos válidos e os UUIDs gerados nas etapas anteriores continuam compatíveis. Pedidos com identificadores adulterados são bloqueados, sem migração ou exclusão silenciosa do histórico. Campos dinâmicos continuam usando `textContent`, preços continuam em centavos e o saldo de pontos continua derivado dos pedidos e resgates.
+
+### Ambiente e alcance dos testes finais
+
+Foram executados testes com Python/Playwright e Microsoft Edge headless disponíveis no ambiente de revisão. Essas ferramentas não são dependências do site. As sessões de teste usaram perfis de navegador isolados, dados fictícios e, nos testes de corrupção/falha, alterações controladas no armazenamento ou nas funções de gravação. Scripts auxiliares ficaram na pasta temporária do ambiente, fora do repositório.
+
+Abertura por `file://` e por HTTP em `/raizes-do-nordeste/` foram verificadas. O servidor HTTP foi usado apenas nos testes: a aplicação não depende dele, de localhost ou de variáveis de ambiente. A conferência dos arquivos verificou caminhos relativos, existência e capitalização exata dos nomes, incluindo imagens referenciadas pelo catálogo.
+
+A matriz registra o resultado final observado **após as correções**. As falhas iniciais estão descritas acima. “Não executado” significa que a validação ainda depende de outro ambiente ou de ação manual; não representa aprovação presumida.
+
+### Matriz de testes finais
+
+| ID | Funcionalidade | Pré-condição | Entrada ou ação | Resultado esperado | Resultado observado | Situação |
+| --- | --- | --- | --- | --- | --- | --- |
+| T01 | Home | Navegador sem dados | Abrir e usar links de história/destaques | Home, 3 destaques, links e rodapé disponíveis | Conteúdo e navegação carregados | Aprovado |
+| T02 | Unidades | Carrinho vazio | Selecionar as 3 cidades e recarregar | Catálogo correto e unidade persistida | Recife 9, Salvador 8, Fortaleza 10; Recife preservada ao recarregar | Aprovado |
+| T03 | Busca e promoção | Recife selecionada | Buscar `BAIAO`, combinar com Bebidas, limpar filtro | Busca sem acentos, resultado vazio coerente e promoção | 1 produto, depois 0; R$ 27,90 por R$ 23,90 | Aprovado |
+| T04 | Limites de quantidade | Detalhes do baião abertos | Testar 1 e 99; adicionar outro item após atingir 99 | Impedir quantidade fora do limite | Botões de limite desabilitados; nova adição recusada mantendo 99 | Aprovado |
+| T05 | Carrinho | Recife, itens disponíveis | Adicionar 2 + 1 baiões, reduzir, recarregar e remover | Somar em uma linha, preço promocional e persistência | 3 itens/R$ 71,70; redução para 2/R$ 47,80; estado vazio após remover | Aprovado |
+| T06 | Troca de unidade | Carrinho com 2 itens | Cancelar e depois confirmar Salvador | Cancelar mantém; confirmar esvazia | Quantidades 2 e 0, respectivamente | Aprovado |
+| T07 | Recuperação do carrinho | Armazenamento de teste | Injetar JSON inválido, IDs indisponíveis, quantidade negativa e preço adulterado | Corrigir itens inválidos; usar preço do catálogo | Inválidos descartados; 2 baiões mantiveram R$ 47,80 | Aprovado |
+| T08 | Guardas de navegação | Carrinho vazio | Abrir checkout e rotas desconhecidas, incluindo propriedades herdadas | Bloquear checkout vazio e não quebrar a Home | Checkout voltou ao carrinho; rotas desconhecidas sem erro | Aprovado |
+| T09 | Cadastro inválido | Formulário vazio | Enviar vazio; depois e-mail inválido e telefone curto | Erros associados aos campos e foco no primeiro erro | Erros de nome/e-mail/telefone/ciência e foco conferidos | Aprovado |
+| T10 | Cadastro válido | E-mail fictício novo | Marcar ciência, deixar marketing recusado e cadastrar | Identificar e persistir sem exigir marketing | Perfil salvo com marketing falso; identificação restaurada | Aprovado |
+| T11 | Login/duplicidade | Perfil cadastrado | Sair, cadastrar o mesmo e-mail em maiúsculas e entrar pelo perfil salvo | Recusar duplicidade e preservar perfil após sair | Duplicidade bloqueada; login por seleção funcionou | Aprovado |
+| T12 | Preferências e perfil | Cliente identificado | Editar e-mail, aceitar marketing, recarregar e recusar | Persistir escolhas sem mudar UUID | E-mail/preferências alterados; mesmo UUID | Aprovado |
+| T13 | Privacidade | Edição de perfil em andamento | Abrir política e fechar por Escape | Não perder campos; devolver foco | Rascunho preservado e foco devolvido ao botão | Aprovado |
+| T14 | Checkout | 5 baiões e cliente não identificado | Finalizar, usar demonstração e voltar ao carrinho | Exigir identificação e manter origem/itens/valores | Retorno ao checkout; 5 itens e R$ 119,50 preservados | Aprovado |
+| T15 | Método obrigatório | Checkout válido | Confirmar sem escolher método | Não pagar; solicitar método com foco | Mensagem exibida e foco no Pix | Aprovado |
+| T16 | Recusa | Checkout com Pix | Selecionar Recusa e confirmar | Processar, desbloquear e preservar carrinho sem pedido | `aria-busy`, botão bloqueado, 0 pedidos e 5 itens mantidos | Aprovado |
+| T17 | Erro de pagamento | Carrinho preservado | Selecionar Erro de comunicação | Permitir nova tentativa sem criar pedido | Mensagem de erro; 0 pedidos e 5 itens mantidos | Aprovado |
+| T18 | Aprovação/duplo clique | Checkout válido | Aprovar Pix com dois cliques e recarregar | Apenas 1 pedido persistido antes do sucesso; limpar carrinho | Pedido aprovado/Recebido, R$ 119,50, confirmação persistida e carrinho vazio | Aprovado |
+| T19 | Valores históricos | Compra aprovada | Alterar preço do catálogo em memória e abrir acompanhamento | Exibir os preços registrados na compra | R$ 23,90 unitário e R$ 119,50 total preservados | Aprovado |
+| T20 | Acompanhamento e foco | Pedido Recebido | Avançar duas vezes, recarregar e tentar avanço com status antigo | Sequência válida, limite final, persistência e foco útil | Pronto para retirada persistido; avanço antigo recusado; foco no título ao final | Aprovado |
+| T21 | Histórico/pontos | Pedido aprovado de R$ 119,50 | Abrir pedidos/fidelidade e recarregar | Pedido do cliente e 119 pontos sem duplicação | 1 pedido e 119 pontos antes/depois da recarga | Aprovado |
+| T22 | Resgate | 119 pontos | Cancelar; depois confirmar com duplo clique e recarregar | Registrar 1 resgate, deduzir 100 e bloquear saldo insuficiente | 1 benefício, 19 pontos persistidos e botão desabilitado | Aprovado |
+| T23 | Separação entre clientes | Dois perfis locais | Sair e acessar pedidos com o outro perfil, inclusive URL direta | Preservar retorno após login; ocultar dados do primeiro | Retorno funcionou; lista/detalhes vazios e 0 pontos para o outro cliente | Aprovado |
+| T24 | Exclusão seletiva | Dois perfis com histórico; segundo histórico montado como fixture | Cancelar exclusão e depois confirmar | Remover somente dados do perfil ativo | Perfil/pedido/resgate do ativo removidos; pedido e resgate do outro preservados | Aprovado |
+| T25 | Validação de registros | Histórico válido salvo para restauração | Injetar JSON inválido, UUID malformado/array, quantidade negativa, pedido incompleto e resgate duplicado | Bloquear leitura/resgate sem sobrescrever conteúdo | Saldo indisponível, registros preservados; histórico restaurado ao repor fixture válida | Aprovado |
+| T26 | Falha de gravação | Checkout com 2 itens | Bloquear gravação de pedidos; restaurar e tentar cartão | Não afirmar sucesso nem limpar em falha; permitir nova tentativa | 2 itens mantidos e nenhum novo pedido na falha; cartão aprovado após restaurar | Aprovado |
+| T27 | Console Web | Monitor de erros JavaScript ativo | Executar T01–T26 | Nenhum erro não tratado | Nenhum `pageerror` nos cenários concluídos | Aprovado |
+| T28 | Ativação do Totem | Perfil e carrinho Web salvos | Cancelar/confirmar ativação, iniciar e tentar rota de perfil | Boas-vindas, carrinho separado e bloqueio das rotas pessoais | Ativação explícita, 0 itens Totem e perfil Web indisponível | Aprovado |
+| T29 | Compra Totem por toque | Totem iniciado | Dois atendimentos: 2 baiões, identificação fictícia, Pix/cartão, confirmação e encerramento | R$ 47,80 por pedido, clientes distintos e limpeza entre sessões | 2 pedidos preservados, UUIDs de clientes distintos e confirmação anterior limpa | Aprovado |
+| T30 | Cancelamento durante pagamento | Totem processando | Encerrar e confirmar; usar Tab/Shift+Tab no diálogo | Cancelar retorno assíncrono e conter foco no diálogo | Nenhum pedido adicional; foco circulou entre Cancelar/Confirmar | Aprovado |
+| T31 | Saída/recarga do Totem | Atendimento com itens e dados Web prévios | Cancelar saída; confirmar; iniciar novamente e recarregar | Cancelar preserva; sair/recarga limpa temporários sem apagar histórico/Web | Dados Web e pedidos preservados; retorno sem cliente e novo carrinho vazio | Aprovado |
+| T32 | Subdiretório estático | Servidor de teste em `/raizes-do-nordeste/` | Navegar e comprar com monitoramento de rede/console | Carregar recursos relativos sem APIs ou erros | Sem 404, requisições externas ou erros JavaScript | Aprovado |
+| T33 | Responsividade | Dados para preencher todas as telas | Percorrer 11 telas Web nas 6 larguras exigidas e Totem em 8 resoluções | Sem rolagem horizontal; diálogos utilizáveis | Nenhuma rolagem horizontal; unidades/produto e fluxos operáveis em retrato/paisagem | Aprovado |
+| T34 | Estrutura e caminhos | Arquivos locais atuais | Verificar IDs, referências HTML/catálogo e capitalização dos caminhos | IDs únicos; recursos existentes com caminhos relativos | 18 referências locais verificadas, sem caminho dependente da raiz do domínio | Aprovado |
+| T35 | Acessibilidade básica | Formulários montados no navegador | Conferir labels, alt, relações ARIA, foco, política e contraste | Controles identificados e foco visível; bordas legíveis | Labels/alt/ARIA válidos, ciclo de foco/Escape funcionais; borda/creme 4,16:1 | Aprovado |
+| T36 | Outros navegadores | Firefox e Safari disponíveis | Repetir compra, persistência, resgate e Totem | Comportamento equivalente | Não testado nesses navegadores | Não executado |
+| T37 | Acessibilidade e aparelhos reais | Leitor de tela, celular/tablet e avaliador | Navegar com leitor, zoom de 200% e toque em aparelho físico | Leitura, foco, escala e toque utilizáveis | Testes atuais usam Edge e toque emulado; avaliação manual pendente | Não executado |
+| T38 | Site publicado | Publicação manual autorizada e concluída | Abrir URL pública e repetir fluxo completo | Mesmo comportamento do teste em subdiretório | Nenhuma publicação foi executada nesta etapa | Não executado |
+
+**Resultado:** 35 cenários aprovados no ambiente descrito e 3 cenários não executados. Não há cenário reprovado pendente entre os testes concluídos. Isso não representa certificação de acessibilidade, segurança ou conformidade jurídica.
+
+Resoluções da revisão final: Web em **360, 390, 430, 768, 1366 e 1920 px** de largura (900 px de altura); Totem em **360×800, 390×844, 430×932, 768×1024, 1024×768, 1366×768, 1080×1920 e 1920×1080**. Foram incluídos os diálogos de unidade/produto. Os pares principais de contraste calculados foram texto/creme **13,20:1**, texto secundário/creme **5,57:1**, texto branco/botão principal **6,13:1**, foco/creme **7,16:1** e borda de controle/creme **4,16:1**. A auditoria manual completa de acessibilidade continua pendente.
+
+### Publicação manual no GitHub Pages
+
+Estas instruções são para uma ação posterior do responsável pelo repositório. A revisão não envia arquivos nem altera configurações remotas.
+
+1. Disponibilize a versão revisada no repositório `raizes-do-nordeste`, em uma branch escolhida por você. Mantenha `index.html`, `css/`, `js/` e `assets/` na raiz, com os nomes e a capitalização atuais.
+2. No GitHub, abra **Settings → Pages**. Em **Build and deployment → Source**, escolha **Deploy from a branch**.
+3. Selecione a branch que contém os arquivos revisados (por exemplo, `main`, se ela existir), a pasta **/(root)** e clique em **Save**.
+4. Acompanhe a publicação na aba **Actions** e abra o endereço informado em Pages. Para esse nome de repositório, o endereço esperado é `https://USUARIO.github.io/raizes-do-nordeste/`, substituindo `USUARIO` pelo proprietário real.
+5. Confira CSS, imagens, navegação por fragmentos, cadastro, compra simulada e `?modo=totem`. Os dados locais do arquivo/Live Server não migram para a origem publicada; comece com dados fictícios novos.
+
+O procedimento de configuração foi conferido na [documentação oficial do GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site). Este site não precisa de instalação npm, build, variáveis de ambiente ou servidor de aplicação. A validação local em subdiretório prepara a compatibilidade, mas não substitui o teste da URL realmente publicada (T38).
+
+### Evidências a capturar posteriormente para o Word
+
+Esta é uma lista de capturas **a produzir posteriormente**, usando somente dados fictícios. Não é um relatório acadêmico, não afirma que as capturas já foram feitas e não inclui um documento Word.
+
+| Evidência | Tela/estado a capturar | O que demonstrar |
+| --- | --- | --- |
+| E01 | Home desktop e mobile | Marca, destaques, navegação e adaptação do layout |
+| E02 | Seleção de unidade | Cidades, endereços fictícios e unidade selecionada |
+| E03 | Cardápio com busca/categoria/promoção | Disponibilidade por unidade, preço original/promocional e estado sem resultados |
+| E04 | Detalhes de produto | Descrição, quantidade e total calculado |
+| E05 | Carrinho preenchido e vazio | Quantidades, remoção, total e acesso ao checkout |
+| E06 | Login demonstrativo | Conta fictícia e aviso de identificação sem autenticação real |
+| E07 | Cadastro com erro e preenchido | Validações, ciência de privacidade e marketing opcional inicialmente recusado |
+| E08 | Perfil e diálogo de exclusão | Alteração de preferências e explicação dos dados removidos |
+| E09 | Checkout | Resumo, retirada, método e aviso de pagamento fictício; capturar recusa/erro separadamente |
+| E10 | Confirmação | Número, data, unidade, valores e pagamento aprovado na simulação |
+| E11 | Meus pedidos e acompanhamento | Histórico do cliente e três estágios com indicação textual |
+| E12 | Fidelidade antes/depois do resgate | Regra, saldo, confirmação e benefício demonstrativo registrado |
+| E13 | Totem | Boas-vindas, cardápio de toque, confirmação e início de novo atendimento vazio |
+| E14 | Política de privacidade | Armazenamento local, exclusão, Totem e limites da demonstração |
+
+Para cada captura futura, anote tela, largura/orientação, ação e resultado que ela comprova. Guarde as imagens fora do código da aplicação até organizar o relatório. Evite mostrar dados pessoais reais ou atribuir à captura um comportamento que ela não evidencia.
+
+### Limitações remanescentes e entrega
+
+A aplicação continua estática e demonstrativa: não há autenticação segura, pagamento real, back-end, transações de servidor, sincronização entre dispositivos, cozinha integrada ou notificações externas. O armazenamento pode ser alterado/apagado pelo usuário e depende do navegador/origem. Use um atendimento por vez. O Totem perde dados temporários ao recarregar e conserva os pedidos fictícios aprovados, sem associá-los a contas Web.
+
+Pendências para a entrega: executar T36–T38, realizar as capturas E01–E14 e elaborar o relatório acadêmico em uma etapa posterior. O código e a documentação estão preparados para a publicação manual; a URL pública ainda não foi validada.

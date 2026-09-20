@@ -6,6 +6,7 @@
   --orange:#a84025;
   --orange-dark:#82301c;
   --line:#ddd2c3;
+  --control-line:#8c735c;
   --serif:Georgia,'Times New Roman',serif;
 }
 
@@ -168,7 +169,7 @@ h2 {
 
 .button-outline {
   background:transparent;
-  border-color:#ae9880;
+  border-color:var(--control-line);
   color:var(--ink);
 }
 
@@ -617,7 +618,7 @@ body:has(dialog[open]) {
   min-height:48px;
   margin-top:8px;
   padding:12px 16px;
-  border:1px solid #ae9880;
+  border:1px solid var(--control-line);
   border-radius:5px;
   background:var(--paper);
   color:var(--ink);
@@ -821,7 +822,7 @@ button:disabled { opacity:.5; cursor:not-allowed; }
   min-width:0;
   min-height:48px;
   padding:12px;
-  border:1px solid #ae9880;
+  border:1px solid var(--control-line);
   border-radius:5px;
   background:var(--paper);
   color:var(--ink);

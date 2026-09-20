@@ -67,7 +67,7 @@
             || (record.phone !== undefined && typeof record.phone !== 'string')) return;
           const { profile, errors } = validate(record);
           if (Object.keys(errors).length || emails.has(profile.email)) return;
-          profile.id = window.RaizesNordeste.orders.idPattern.test(record.id) && !ids.has(record.id)
+          profile.id = typeof record.id === 'string' && window.RaizesNordeste.orders.idPattern.test(record.id) && !ids.has(record.id)
             ? record.id : window.RaizesNordeste.orders.newId();
           ids.add(profile.id);
           emails.add(profile.email);

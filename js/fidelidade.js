@@ -82,7 +82,12 @@
     }
     document.getElementById('advance-order').addEventListener('click', () => {
       if (!currentOrder) return;
-      try { orders.advance(currentOrder.id, customer().id, currentOrder.status); showOrder(currentOrder.id); }
+      try {
+        orders.advance(currentOrder.id, customer().id, currentOrder.status);
+        showOrder(currentOrder.id);
+        const button = document.getElementById('advance-order');
+        (button.disabled || button.hidden ? document.getElementById('order-title') : button).focus();
+      }
       catch { document.getElementById('order-message').textContent = 'Não foi possível atualizar o status. O avanço não foi confirmado; reabra o pedido e confira o armazenamento.'; }
     });
     document.getElementById('redeem-reward').addEventListener('click', () => {

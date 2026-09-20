@@ -325,7 +325,7 @@
     }
     const isMenu = view === 'cardapio';
     const isCart = view === 'carrinho';
-    const identityView = identityViews[view];
+    const identityView = Object.hasOwn(identityViews, view) ? identityViews[view] : null;
     if (productDialog.open) productDialog.close();
     document.getElementById('home-view').hidden = isMenu || isCart || Boolean(identityView);
     menuView.hidden = !isMenu;

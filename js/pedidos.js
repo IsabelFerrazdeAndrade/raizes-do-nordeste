@@ -1,7 +1,8 @@
 (() => {
   'use strict';
   const key = 'raizesNordeste.orders';
-  const idPattern = /^[a-f0-9-]{36}$/i;
+  const idPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+  const isId = (value) => typeof value === 'string' && idPattern.test(value);
   const statuses = ['Recebido', 'Em preparação', 'Pronto para retirada'];
   function newId() {
     if (crypto.randomUUID) return crypto.randomUUID();
@@ -13,9 +14,9 @@
   }
   const text = (value) => typeof value === 'string' && value.trim().length > 0 && value.length <= 254;
   function valid(order) {
-    if (!order || !idPattern.test(order.id) || !idPattern.test(order.attemptId) || !/^PED-\d{8}-\d{4,}$/.test(order.number)
+    if (!order || !isId(order.id) || !isId(order.attemptId) || !text(order.number) || !/^PED-\d{8}-\d{4,}$/.test(order.number)
       || !text(order.createdAt) || !Number.isFinite(Date.parse(order.createdAt))
-      || !order.customer || !idPattern.test(order.customer.id) || !text(order.customer.name)
+      || !order.customer || !isId(order.customer.id) || !text(order.customer.name)
       || !order.unit || !text(order.unit.id) || !text(order.unit.name) || !text(order.unit.address)
       || !['pix', 'card'].includes(order.method) || order.paymentStatus !== 'aprovado' || !statuses.includes(order.status)
       || !Array.isArray(order.items) || !order.items.length || order.items.length > 100) return false;
@@ -42,8 +43,8 @@
       throw new Error('Registro local de pedidos inválido.');
     }
     store.redemptions = store.redemptions === undefined ? [] : store.redemptions;
-    if (!Array.isArray(store.redemptions) || store.redemptions.some((item) => !item || !idPattern.test(item.id)
-      || !idPattern.test(item.requestId) || !idPattern.test(item.customerId) || !text(item.createdAt) || !Number.isFinite(Date.parse(item.createdAt))
+    if (!Array.isArray(store.redemptions) || store.redemptions.some((item) => !item || !isId(item.id)
+      || !isId(item.requestId) || !isId(item.customerId) || !text(item.createdAt) || !Number.isFinite(Date.parse(item.createdAt))
       || item.points !== 100 || item.benefitCents !== 1000)
       || new Set(store.redemptions.map((item) => item.id)).size !== store.redemptions.length
       || new Set(store.redemptions.map((item) => item.requestId)).size !== store.redemptions.length) throw new Error('Resgates locais inválidos.');
@@ -105,7 +106,7 @@
     return order;
   }
   function redeem(customerId, requestId) {
-    if (!idPattern.test(customerId) || !idPattern.test(requestId)) throw new Error('Identificação inválida.');
+    if (!isId(customerId) || !isId(requestId)) throw new Error('Identificação inválida.');
     const store = read();
     const existing = (store.redemptions || []).find((item) => item.requestId === requestId);
     if (existing) {
