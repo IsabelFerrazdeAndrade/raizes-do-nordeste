@@ -53,7 +53,7 @@
     return store;
   }
   function write(store) { localStorage.setItem(key, JSON.stringify(store)); }
-  function save({ attemptId, customer, unit, review, method }) {
+  function save({ attemptId, customer, unit, review, method, temporaryCart = false }) {
     const store = read();
     const existing = store.orders.find((order) => order.attemptId === attemptId);
     if (existing) {
@@ -75,7 +75,7 @@
     };
     if (!valid(order) || store.orders.some((item) => item.id === order.id)) throw new Error('Pedido inválido.');
     store.orders.push(order);
-    store.pendingClear = order.id;
+    store.pendingClear = temporaryCart ? null : order.id;
     write(store);
     return order;
   }

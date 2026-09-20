@@ -25,12 +25,14 @@
     let state = { unitId: null, items: [] };
 
     function save() {
+      if (data.totem.enabled) return true;
       try { localStorage.setItem(storageKey, JSON.stringify(state)); return true; }
       catch { onStorageError(); return false; }
     }
 
     function restore(unitId) {
       state = { unitId: findUnit(unitId)?.id || null, items: [] };
+      if (data.totem.enabled) return false;
       let raw;
       try { raw = localStorage.getItem(storageKey); }
       catch { onStorageError(); return false; }

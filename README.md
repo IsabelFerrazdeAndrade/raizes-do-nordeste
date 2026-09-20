@@ -1,6 +1,6 @@
 # Raízes do Nordeste
 
-Aplicação acadêmica de uma rede fictícia de lanchonetes inspirada na culinária e no acolhimento nordestinos. Contém Home, unidades, cardápio e carrinho (Etapas 1–3), perfis demonstrativos e privacidade (Etapa 4), checkout e pagamento simulado (Etapa 5), acompanhamento de pedidos e fidelidade demonstrativa (Etapa 6). Não realiza vendas ou cobranças reais.
+Aplicação acadêmica de uma rede fictícia de lanchonetes inspirada na culinária e no acolhimento nordestinos. Contém Home, unidades, cardápio e carrinho (Etapas 1–3), perfis demonstrativos e privacidade (Etapa 4), checkout e pagamento simulado (Etapa 5), acompanhamento de pedidos e fidelidade demonstrativa (Etapa 6) e modo Totem com ajustes responsivos (Etapa 7). Não realiza vendas ou cobranças reais.
 
 **Use somente dados fictícios. Não crie contas reais.** A identificação é uma simulação local sem senha, verificação de identidade ou autenticação segura. Qualquer pessoa com acesso ao mesmo navegador pode selecionar os perfis salvos.
 
@@ -20,12 +20,13 @@ js/auth.js            # Perfis demonstrativos, validação, identificação e ar
 js/pagamento.js       # Serviço mockado assíncrono, checkout e confirmação
 js/pedidos.js         # Pedidos, status, pontos derivados e persistência de resgates
 js/fidelidade.js      # Interfaces de pedidos, acompanhamento e fidelidade
+js/totem.js           # Modo explícito, início, encerramento e proteção do atendimento
 assets/images/        # Ilustrações SVG próprias e substituíveis
 .gitignore            # Arquivos locais que não devem ser versionados
 README.md             # Documentação
 ```
 
-Os scripts usam `defer`, na ordem `data.js`, `carrinho.js`, `pedidos.js`, `auth.js`, `pagamento.js`, `fidelidade.js`, `app.js`. Um único namespace (`window.RaizesNordeste`) disponibiliza os módulos sem espalhar variáveis globais. Carrinho e identificação mantêm seus estados isolados. `auth.js` centraliza leitura, validação e gravação de perfis e reutiliza um template de campos para cadastro e edição. Home e cardápio compartilham o construtor de cards; detalhes e carrinho compartilham o controle de quantidade e a lógica de preços. Confirmação e acompanhamento reutilizam a apresentação dos dados históricos do pedido. Conteúdo dinâmico usa `textContent`, sem inserção por `innerHTML`.
+Os scripts usam `defer`, na ordem `data.js`, `totem.js`, `carrinho.js`, `pedidos.js`, `auth.js`, `pagamento.js`, `fidelidade.js`, `app.js`. Um único namespace (`window.RaizesNordeste`) disponibiliza os módulos sem espalhar variáveis globais. Carrinho e identificação mantêm seus estados isolados. `auth.js` centraliza leitura, validação e gravação de perfis e reutiliza um template de campos para cadastro e edição. Home e cardápio compartilham o construtor de cards; detalhes e carrinho compartilham o controle de quantidade e a lógica de preços. Confirmação e acompanhamento reutilizam a apresentação dos dados históricos do pedido. Conteúdo dinâmico usa `textContent`, sem inserção por `innerHTML`.
 
 ## Como executar
 
@@ -314,6 +315,67 @@ Abertura por arquivo local e HTTP em subdiretório passou, com recursos locais e
 
 Não foram testados leitores de tela, aparelhos físicos, Safari ou Firefox. Os resultados não constituem certificação de acessibilidade ou segurança.
 
+## Etapa 7: modo Totem e responsividade
+
+O botão **Modo Totem · demonstração acadêmica**, no cabeçalho Web, ativa explicitamente o autoatendimento. Ele funciona em computadores e tablets, sem depender de resolução, tela sensível ao toque ou hardware específico. O endereço utiliza `?modo=totem`; também é possível abrir `index.html?modo=totem` diretamente, inclusive no GitHub Pages. Mudar de modo recarrega a mesma aplicação, com os mesmos produtos, componentes, preços e regras.
+
+### Fluxo de atendimento
+
+1. Na tela de boas-vindas, confira a unidade na faixa superior e clique em **Iniciar pedido**. Sem unidade definida, a seleção existente abre automaticamente. A unidade também pode ser escolhida antes de iniciar.
+2. Use busca e categorias, abra **Ver detalhes**, escolha a quantidade e adicione ao carrinho. A troca de unidade com itens pede a mesma confirmação do modo Web; cancelar preserva os itens, confirmar esvazia o carrinho.
+3. Abra **Carrinho**, revise quantidades e total e clique em **Finalizar pedido**. Use **Usar conta de demonstração** para identificar-se como **Cliente Totem · totem@exemplo.test**. Não há campos pessoais, senhas, perfis Web listados ou cadastro no Totem.
+4. No checkout compartilhado, selecione Pix ou cartão demonstrativo e o resultado da simulação. Aprovação registra o pedido e esvazia somente o carrinho temporário; recusa ou erro mantém os itens e permite tentar novamente.
+5. A confirmação mostra número, unidade e endereço de retirada, produtos, valores, pagamento e status Recebido. Ela permanece visível até sua próxima ação; não há encerramento automático ou impressão.
+6. Use **Encerrar atendimento** na confirmação para limpar a sessão e voltar às boas-vindas. Durante um atendimento ainda não concluído, o botão da barra superior pede confirmação antes de descartar os dados. Cancelar ou Escape preserva o atendimento.
+7. **Sair do modo Totem** retorna à Home Web e restaura o layout normal. Também pede confirmação se houver atendimento em andamento. O cliente do Totem não fica identificado no modo Web.
+
+### Isolamento e persistência
+
+- O carrinho do Totem utiliza o mesmo módulo `carrinho.js`, mas fica somente na memória da página. Não lê nem grava `raizesNordeste.cart`. O carrinho Web anterior permanece salvo e reaparece ao sair.
+- A unidade Web salva serve como escolha inicial. Trocas no Totem valem para a página atual e não alteram a unidade do carrinho Web. A unidade permanece entre atendimentos enquanto a página do Totem continuar aberta; ao recarregar, a escolha inicial vem da configuração Web salva.
+- `auth.js` não carrega perfis Web no Totem. Cada atendimento identificado recebe um UUID novo e dados exclusivamente fictícios, sem criar um perfil pessoal persistente. Encerrar limpa identificação, carrinho, busca, categoria, resumo, confirmação e escolhas de pagamento; tentativas assíncronas pendentes são canceladas.
+- A troca de modo encerra a identificação Web sem excluir perfis, preferências, pedidos ou resgates. Se houver perfil identificado ou itens Web, a ativação explica o comportamento e pede confirmação. Se não for possível gravar o encerramento da identificação, a troca é bloqueada com aviso para evitar restaurá-la inadvertidamente.
+- Pedidos aprovados do Totem permanecem em `raizesNordeste.orders`, com o mesmo formato da Etapa 5 e cliente fictício. Como seu carrinho não é persistente, esses pedidos não criam marcador `pendingClear`; assim, a recuperação do pagamento Web não confunde carrinhos com itens iguais. O Totem não apaga pedidos ou recompensas de outros perfis.
+- Rotas de perfil, cadastro, histórico e fidelidade não abrem no Totem. Sem atendimento iniciado, endereços antigos voltam às boas-vindas; o próximo cliente não acessa a confirmação anterior. Histórico e fidelidade continuam disponíveis no modo Web para os respectivos perfis.
+
+### Limitações demonstrativas
+
+Recarregar ou fechar a página perde o atendimento temporário, inclusive a possibilidade de reabrir sua confirmação. O navegador pode pedir confirmação ao sair durante um atendimento não concluído; esse aviso depende das regras do próprio navegador. Pedidos já aprovados permanecem armazenados. Ao abrir novamente o Totem, a aplicação sempre começa nas boas-vindas, sem reutilizar cliente ou itens. O retorno pelo cache de navegação também recarrega o estado.
+
+Os pedidos anônimos do Totem não ficam associados aos perfis Web nem possuem uma conta para recuperação posterior. Os registros podem ser inspecionados pelas ferramentas de desenvolvimento e removidos pelas configurações de armazenamento do site; não foi criado um painel administrativo. A fidelidade pessoal é uma experiência do modo Web, sem transferência dos pontos do atendimento anônimo.
+
+Use um atendimento por vez, em uma aba. Não há sincronização de totens, bloqueio de equipamento, proteção contra manipulação do armazenamento, autenticação real, impressora, cobrança ou cozinha conectada. Alterações de dados em outra aba interrompem pagamentos em processamento e exibem aviso no Totem. Sem armazenamento local disponível, não é possível confirmar pedidos; os itens ficam temporariamente disponíveis para nova tentativa. O projeto continua sem dependências, npm, frameworks ou serviços externos.
+
+### Ajustes de interface
+
+O modo é representado por `.totem-mode`. Botões e controles principais têm área de toque de pelo menos 60 px de altura; **Iniciar pedido** tem 80 px. A navegação exibe cardápio, carrinho, encerramento e saída, com fontes e espaçamento maiores. Os cards usam Grid adaptável; a barra utiliza Flexbox com quebra. Modais permitem rolagem vertical em telas baixas. Avisos no Totem ocupam espaço no fluxo para não cobrir os controles.
+
+O modo Web mantém os componentes anteriores, com ajustes de quebra em botões, textos longos e cabeçalho. Foco visível, rótulos, estados textuais, textos alternativos e diálogos operáveis por teclado são compartilhados. Não há dependência de hover ou novas animações.
+
+### Verificações executadas na Etapa 7
+
+Testes automatizados com Playwright e Microsoft Edge headless disponíveis no ambiente de desenvolvimento, sem adicionar dependências de execução ao projeto:
+
+- Regressão Web: Home, busca sem acentos, categorias, cadastro, identificação, carrinho, pagamento aprovado, acompanhamento e resgate de fidelidade.
+- Totem: ativação/cancelamento, boas-vindas, seleção e troca de unidade com confirmação, detalhes, quantidades, totais, identificação fictícia, Pix/cartão, aprovação, recusa, erro e nova tentativa.
+- Encerramento durante processamento, cancelamento/confirmação de descarte, saída para Web, recarga, proteção de rotas pessoais e limpeza da sessão. Dois atendimentos aprovados receberam identificadores de cliente diferentes e mantiveram os pedidos históricos.
+- Preservação do carrinho, unidade e perfis Web, sem exibir os nomes de perfis locais no Totem. Falha simulada ao gravar pedidos manteve o carrinho e não exibiu uma confirmação falsa.
+- Abertura por arquivo local e HTTP em subdiretório; fluxo com toque simulado, ciclo de Tab/Shift+Tab, Escape, confirmação por Enter e retorno do foco. As telas de boas-vindas e cardápio foram inspecionadas visualmente.
+
+| Experiência | Resoluções verificadas |
+| --- | --- |
+| Web: Home, cardápio, carrinho, entrada, cadastro, perfil, checkout, confirmação, pedidos, acompanhamento e fidelidade | 360, 390, 430, 768, 1366 e 1920 px de largura, com 900 px de altura |
+| Totem: boas-vindas, cardápio, carrinho, identificação, checkout e confirmação | 360×800, 390×844, 430×932, 768×1024, 1024×768, 1366×768, 1080×1920 e 1920×1080 |
+| Diálogos de unidade e produto | Mesmas larguras Web e resoluções Totem acima |
+
+Não foi detectada rolagem horizontal nesses testes. Os fluxos concluídos não registraram erros JavaScript; o teste HTTP não encontrou recursos ausentes nem requisições externas. `git diff --check` passou. Não foram testados hardware de Totem, aparelhos físicos, leitores de tela, Safari ou Firefox. Toque foi emulado no navegador; não representa teste em um equipamento real.
+
+### Roteiro manual de conferência
+
+Abra `index.html` ou use Live Server. Ative **Modo Totem**, inicie, selecione Recife e adicione duas porções de baião de dois (R$ 47,80). Finalize usando o cliente fictício, escolha um pagamento demonstrativo e aprove. Confira número, unidade, total, status e retirada; encerre e inicie novamente. O novo carrinho deve estar vazio, a identificação deve ser solicitada novamente e o pedido anterior deve permanecer no armazenamento.
+
+Repita com recusa, troca de unidade e cancelamento do encerramento. Teste a saída para Web com itens e confirme que há um aviso antes do descarte. Em F12, use o modo de dispositivos nas resoluções da tabela, alternando orientação, e confira a navegação por teclado e o acesso aos botões inferiores dos diálogos.
+
 ## Planejado para próximas etapas
 
-A **Etapa 7** será dedicada ao modo Totem e aos ajustes de responsividade. O Totem não está implementado. A aplicação continua estática, sem npm, back-end, pagamento real, autenticação segura, cozinha integrada ou notificações externas.
+A **Etapa 8** será dedicada à revisão final, aos testes complementares e à publicação no GitHub Pages. A publicação ainda não foi realizada. A aplicação continua estática, sem npm, back-end, pagamento real, autenticação segura, cozinha integrada ou notificações externas.

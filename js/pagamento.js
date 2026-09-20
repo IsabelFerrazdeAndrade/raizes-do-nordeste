@@ -63,6 +63,7 @@
     // O marcador salvo junto ao pedido permite terminar a limpeza após uma falha
     // entre as duas gravações locais, sem apagar um carrinho diferente.
     function recover() {
+      if (data.totem.enabled) return;
       try {
         const store = data.orders.read();
         if (!store.pendingClear) return;
@@ -124,11 +125,11 @@
           status.textContent = 'Recusado: pagamento não aprovado nesta simulação. Escolha outra opção ou tente novamente.'; return;
         }
         let order;
-        try { order = data.orders.save({ attemptId, ...current, method }); }
+        try { order = data.orders.save({ attemptId, ...current, method, temporaryCart: data.totem.enabled }); }
         catch {
           status.textContent = 'A simulação retornou aprovação, mas não foi possível registrar o pedido no navegador. Nenhum novo pedido foi confirmado e o carrinho foi mantido. Verifique o armazenamento antes de tentar novamente.'; return;
         }
-        if (cart.clear()) {
+        if (cart.clear() && !data.totem.enabled) {
           try { data.orders.acknowledgeClear(); } catch { /* O marcador permite recuperar no próximo acesso. */ }
         }
         onCartChanged();

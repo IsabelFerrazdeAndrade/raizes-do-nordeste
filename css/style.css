@@ -639,7 +639,7 @@ body:has(dialog[open]) {
 #menu-products .product-copy { display:flex; flex-direction:column; flex:1; }
 #menu-products .product-price { margin-top:auto; padding-top:20px; }
 
-/* Detalhes e carrinho: controles compartilhados, sem uma interface Totem ativa. */
+/* Detalhes e carrinho: controles compartilhados pelos modos Web e Totem. */
 .product-details-button { margin-top:18px; }
 button:disabled { opacity:.5; cursor:not-allowed; }
 #cart-link { white-space:nowrap; }
@@ -875,4 +875,65 @@ button:disabled { opacity:.5; cursor:not-allowed; }
 @media(max-width:599px) {
   .identity-card { padding:18px; }
   .account-actions { width:100%; }
+}
+
+/* Autoatendimento explícito: a mesma interface, com controles confortáveis ao toque. */
+.totem-only { display:none; }
+.totem-mode .totem-only { display:block; }
+.totem-mode .button.totem-only { display:inline-flex; }
+.totem-mode .web-only,
+.totem-mode .header-inner nav,
+.totem-mode .account-actions,
+.totem-mode #activate-totem,
+.totem-mode #menu-view>a[href="#inicio"],
+.totem-mode .site-footer { display:none; }
+.totem-toolbar { display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding-block:16px; }
+.totem-toolbar strong { flex:1 1 100%; color:var(--orange-dark); }
+.totem-mode { font-size:18px; }
+.totem-mode .button,.totem-mode .text-button,.totem-mode .text-link {
+  min-height:60px; font-size:17px; touch-action:manipulation;
+}
+.totem-mode .button { padding:16px 22px; }
+.totem-mode .quantity-control button { width:60px; height:60px; padding:0; font-size:26px; }
+.totem-mode input:not([type="radio"]):not([type="checkbox"]),.totem-mode select {
+  min-height:60px; font-size:18px;
+}
+.totem-mode .checkbox-label { min-height:60px; align-items:center; font-size:17px; }
+.totem-mode .field-hint,.totem-mode .demo-disclaimer,.totem-mode .unit-option p,
+.totem-mode .product-copy p,.totem-mode .checkout-item p { font-size:16px; }
+.totem-mode .section-space { padding-block:36px; }
+.totem-mode .product-grid { grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); }
+.totem-mode .product-details-button { width:100%; }
+.totem-mode .product-card { max-width:560px; }
+.totem-mode #product-dialog { width:min(720px,calc(100% - 32px)); }
+.totem-mode .header-inner { padding-block:16px; }
+.totem-welcome { max-width:820px; text-align:center; }
+.totem-welcome>img { margin:0 auto 24px; }
+.totem-welcome>p { margin:24px auto; max-width:620px; }
+.totem-welcome #start-totem { min-height:80px; width:min(100%,420px); font-size:24px; }
+.totem-finish { margin-top:28px; width:min(100%,540px); }
+.totem-mode .identity-view { max-width:800px; }
+.totem-mode .app-notice:not(:empty) { position:static; transform:none; margin:16px auto; width:min(1180px,calc(100% - 40px)); }
+/* Quebra de textos e distribuição flexível também beneficiam o modo Web. */
+.header-inner>* { min-width:0; }
+.header-inner .brand { flex-shrink:0; }
+#activate-totem { margin-left:auto; }
+.button { max-width:100%; overflow-wrap:anywhere; text-align:center; }
+.checkout-item,.cart-row-info,#next-step-customer,#checkout-unit { overflow-wrap:anywhere; }
+dialog { max-height:calc(100dvh - 32px); }
+:focus-visible { outline:3px solid #245a69; outline-offset:4px; }
+@media(max-width:599px) {
+  #activate-totem { width:100%; margin-left:0; }
+  .totem-toolbar>.button { flex:1 1 180px; }
+  .totem-mode .header-inner .header-unit { flex:1 1 100%; }
+  .totem-mode .header-inner #cart-link { width:100%; }
+  .totem-mode .dialog-body { padding:20px; }
+  .totem-mode .cart-row,.totem-mode .cart-summary { padding:18px; }
+  .totem-mode .dialog-actions>* { flex:1 1 100%; }
+  .totem-mode .dialog-actions form button { width:100%; }
+}
+@media(min-width:1000px) {
+  .totem-toolbar strong { flex:1; }
+  .totem-mode .container { width:min(1400px,calc(100% - 80px)); }
+  .totem-mode .totem-welcome { max-width:820px; }
 }

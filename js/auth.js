@@ -40,6 +40,7 @@
 
     // Uma única gravação mantém perfis, preferência e identificação consistentes.
     function persist() {
+      if (window.RaizesNordeste.totem.enabled) return true;
       try {
         if (state.profiles.length) localStorage.setItem(storageKey, JSON.stringify(state));
         else localStorage.removeItem(storageKey);
@@ -49,6 +50,7 @@
     }
 
     function restore() {
+      if (window.RaizesNordeste.totem.enabled) return;
       let raw;
       try { raw = localStorage.getItem(storageKey); }
       catch { onStorageError(); return; }
@@ -212,6 +214,11 @@
       }
     });
     document.getElementById('demo-login').addEventListener('click', () => {
+      if (window.RaizesNordeste.totem.enabled) {
+        if (!active()) state.profiles = [{ ...demo, name: 'Cliente Totem', email: 'totem@exemplo.test', id: window.RaizesNordeste.orders.newId() }];
+        identify('totem@exemplo.test');
+        return;
+      }
       if (!state.profiles.some((profile) => profile.email === demo.email)) state.profiles.push({ ...demo, id: window.RaizesNordeste.orders.newId() });
       identify(demo.email);
     });
@@ -252,7 +259,31 @@
         return { ...validate(record).profile, id: current.id };
       } catch { return null; }
     }
-    return { active: () => active() ? { ...active() } : null, verified, show };
+    function clearSession() {
+      try {
+        const raw = localStorage.getItem(storageKey);
+        if (raw !== null) {
+          const saved = JSON.parse(raw);
+          if (!saved || !Array.isArray(saved.profiles)) throw new Error('Perfis inválidos.');
+          if (saved.activeEmail !== null) {
+            saved.activeEmail = null;
+            localStorage.setItem(storageKey, JSON.stringify(saved));
+          }
+        }
+        state.activeEmail = null;
+        updateHeader();
+        return true;
+      } catch { onStorageError(); return false; }
+    }
+    function resetTemporary() {
+      if (!window.RaizesNordeste.totem.enabled) return;
+      state = { profiles: [], activeEmail: null };
+      durable = false;
+      fillForm(registerForm, null); fillForm(profileForm, null);
+      profileSelect.replaceChildren();
+      updateHeader();
+    }
+    return { active: () => active() ? { ...active() } : null, verified, show, clearSession, resetTemporary };
   }
 
   window.RaizesNordeste.auth = { init };

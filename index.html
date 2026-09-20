@@ -9,6 +9,7 @@
   <link rel="icon" href="assets/images/sun.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
   <script src="js/data.js" defer></script>
+  <script src="js/totem.js" defer></script>
   <script src="js/carrinho.js" defer></script>
   <script src="js/pedidos.js" defer></script>
   <script src="js/auth.js" defer></script>
@@ -33,13 +34,29 @@
       <button class="button button-outline header-unit" type="button" data-feature="unit">Escolher unidade <span aria-hidden="true">↗</span></button>
       <a class="button button-primary" id="cart-link" href="#carrinho">Carrinho <span id="cart-count">0</span></a>
       <div class="account-actions"><a class="button button-outline" id="account-link" href="#entrar">Entrar</a><button class="button button-outline" id="header-logout" type="button" hidden>Sair</button></div>
+      <button class="button button-outline" id="activate-totem" type="button">Modo Totem · demonstração acadêmica</button>
     </div>
   </header>
+  <nav id="totem-toolbar" class="container totem-toolbar" aria-label="Autoatendimento demonstrativo" hidden>
+    <strong>Modo Totem · demonstração acadêmica</strong>
+    <a id="totem-menu-link" class="button button-outline" href="#cardapio" hidden>Cardápio</a>
+    <button id="totem-end-header" class="button button-outline" type="button" data-end-totem hidden>Encerrar atendimento</button>
+    <button class="button button-outline" type="button" data-exit-totem>Sair do modo Totem</button>
+  </nav>
   <div class="unit-bar"><div class="container"><p id="selected-unit" role="status">Nenhuma unidade selecionada</p><p id="storage-notice" role="status" hidden></p></div></div>
   <p id="identity-feedback" class="container identity-feedback" role="status" aria-live="polite"></p>
   <p id="app-notice" class="app-notice" role="status" aria-live="polite" aria-atomic="true"></p>
 
   <main id="conteudo" tabindex="-1">
+    <section id="totem-view" class="container section-space totem-welcome" aria-labelledby="totem-title" hidden>
+      <img src="assets/images/sun.svg" width="80" height="80" alt="">
+      <p class="eyebrow">AUTOATENDIMENTO DEMONSTRATIVO</p>
+      <h1 id="totem-title" tabindex="-1">Bem-vindo à<br>Raízes do Nordeste</h1>
+      <p>Seu próximo encontro com o sabor começa aqui.</p>
+      <p>Escolha seus favoritos e experimente um pedido com pagamento fictício, sem informar dados pessoais.</p>
+      <button id="start-totem" class="button button-primary" type="button">Iniciar pedido</button>
+      <p class="field-hint">Um atendimento por vez. Ao encerrar ou recarregar, os dados temporários são limpos. Pedidos aprovados ficam registrados neste navegador.</p>
+    </section>
     <div id="home-view">
     <section class="hero container" aria-labelledby="hero-title">
       <div class="hero-copy">
@@ -112,19 +129,21 @@
     <section id="login-view" class="container section-space identity-view" aria-labelledby="login-title" hidden>
       <p class="eyebrow">BEM-VINDO À NOSSA MESA</p>
       <h1 id="login-title" tabindex="-1">Entrar na demonstração</h1>
-      <p class="demo-disclaimer">Projeto acadêmico: não crie contas reais. Esta identificação é uma simulação local, sem senha e sem autenticação segura. Qualquer pessoa com acesso a este navegador pode selecionar os perfis salvos.</p>
+      <p class="demo-disclaimer web-only">Projeto acadêmico: não crie contas reais. Esta identificação é uma simulação local, sem senha e sem autenticação segura. Qualquer pessoa com acesso a este navegador pode selecionar os perfis salvos.</p>
+      <p class="demo-disclaimer totem-only">Use o cliente fictício deste atendimento. Não informe dados pessoais. Perfis Web não estão disponíveis no Totem.</p>
       <div class="identity-card">
         <h2>Experimente com um perfil fictício</h2>
-        <p>Cliente Demonstração · cliente@exemplo.test</p>
+        <p class="web-only">Cliente Demonstração · cliente@exemplo.test</p>
+        <p class="totem-only">Cliente Totem · totem@exemplo.test</p>
         <button id="demo-login" class="button button-primary" type="button">Usar conta de demonstração</button>
       </div>
-      <form id="login-form" class="identity-card" novalidate>
+      <form id="login-form" class="identity-card web-only" novalidate>
         <h2>Já cadastrou um perfil neste navegador?</h2>
         <div class="form-field"><label for="local-profile">Perfil demonstrativo local</label><select id="local-profile" aria-describedby="login-error"><option value="">Selecione um perfil</option></select><p id="login-error" class="field-error" role="alert"></p></div>
         <button class="button button-outline" type="submit">Entrar com o perfil selecionado</button>
         <p id="local-profiles-note"></p>
       </form>
-      <p>Quer experimentar o cadastro? <a id="register-link" class="text-link" href="#cadastro">Criar perfil demonstrativo</a></p>
+      <p class="web-only">Quer experimentar o cadastro? <a id="register-link" class="text-link" href="#cadastro">Criar perfil demonstrativo</a></p>
       <button class="text-button" type="button" data-privacy>Privacidade demonstrativa</button>
       <a class="text-link identity-return" href="#inicio">Voltar ao início</a>
     </section>
@@ -169,7 +188,8 @@
       <p class="eyebrow">UMA ESCOLHA COM SABOR DE CASA</p><h1 id="confirmation-title" tabindex="-1">Confirmação do pedido</h1>
       <p id="confirmation-message" role="status"></p><div id="confirmation-details" class="identity-card"></div>
       <p class="demo-disclaimer">Pagamento demonstrativo. Nenhuma cobrança será realizada.</p>
-      <div class="dialog-actions"><a class="button button-outline" href="#inicio">Voltar ao início</a><a class="button button-primary" href="#cardapio">Ver cardápio</a><button class="button button-outline" id="track-order" type="button">Acompanhar pedido</button></div>
+      <div class="dialog-actions web-only"><a class="button button-outline" href="#inicio">Voltar ao início</a><a class="button button-primary" href="#cardapio">Ver cardápio</a><button class="button button-outline" id="track-order" type="button">Acompanhar pedido</button></div>
+      <button class="button button-primary totem-only totem-finish" type="button" data-end-totem>Encerrar atendimento</button>
       <p id="tracking-notice" role="status"></p>
     </section>
     <section id="orders-view" class="container section-space" aria-labelledby="orders-title" hidden>
@@ -243,6 +263,7 @@
       <p>Raízes do Nordeste é um projeto acadêmico. Use dados fictícios: não oferecemos criação de contas reais ou autenticação segura.</p>
       <h3>Quais dados e para quê?</h3><p>Nome, e-mail e telefone opcional compõem o perfil demonstrativo. Guardamos também um identificador local do perfil, a ciência da privacidade, a preferência opcional de marketing e qual perfil está ativo. Unidade, IDs e quantidades mantêm o carrinho entre visitas. Pedidos aprovados na simulação guardam identificadores, nome do cliente, unidade, produtos, quantidades, preços aplicados, total, data, método demonstrativo e status para mostrar a confirmação e o acompanhamento. Os pontos são calculados a partir dos pedidos aprovados. Resgates guardam identificador, perfil, data, pontos utilizados e benefício demonstrativo para exibir o saldo e o histórico. Não coletamos dados bancários, cartão ou chave Pix.</p>
       <h3>Onde ficam?</h3><p>Esses dados ficam no armazenamento local deste navegador e desta origem, sem servidor próprio de cadastro. A aplicação não envia os dados dos formulários a serviços externos. Se o armazenamento estiver bloqueado, funciona em memória enquanto a página estiver aberta. Quem tem acesso ao navegador pode consultar, selecionar ou modificar os perfis: não há senha, proteção de conta ou criptografia de armazenamento implementada.</p>
+      <h3>Atendimento no Totem</h3><p>O Totem utiliza um cliente fictício diferente a cada atendimento, sem listar os perfis Web. Carrinho e identificação do Totem ficam somente na memória desta página e são removidos ao encerrar ou recarregar. Pedidos aprovados permanecem no registro local, com o nome fictício Cliente Totem e um identificador do atendimento; não ficam acessíveis ao próximo cliente pela interface. Não há conta pessoal ou recuperação desse atendimento após encerrá-lo. O carrinho e os perfis Web são preservados separadamente; a identificação Web é encerrada ao trocar de modo.</p>
       <h3>Marketing é uma escolha separada</h3><p>A opção começa desmarcada e não é necessária para cadastrar. A preferência apenas demonstra aceitar ou recusar comunicações. Não enviamos e-mails, SMS ou mensagens promocionais. Você pode alterá-la no perfil.</p>
       <h3>Como editar, sair ou excluir?</h3><p>Acesse seu nome no cabeçalho para editar o perfil. “Sair” encerra a identificação e mantém o perfil disponível para seleção local. “Excluir meus dados locais” remove os pedidos e resgates demonstrativos associados ao perfil ativo, eliminando também os pontos derivados, o perfil e sua preferência de marketing e encerra a identificação. Se não for possível excluir os pedidos e resgates locais, a operação é interrompida com aviso. Outros perfis, seus pedidos e resgates, a unidade e o carrinho são preservados. A conta fictícia de teste pode ser recriada se você escolher usá-la novamente.</p>
       <p>Os dados ficam até serem excluídos pelo perfil ou pelas configurações do navegador. Limpar os dados deste site no navegador também remove os demais perfis, a unidade e o carrinho. Se uma exclusão não puder ser gravada, a interface informará a falha.</p>
@@ -255,6 +276,9 @@
   </dialog>
   <dialog id="reward-dialog" aria-labelledby="reward-title" aria-describedby="reward-description">
     <div class="dialog-body"><h2 id="reward-title">Resgatar recompensa?</h2><p id="reward-description">Serão deduzidos 100 pontos para registrar um benefício demonstrativo de R$ 10,00. Nenhum desconto será aplicado no checkout.</p><div class="dialog-actions"><form method="dialog"><button class="button button-outline" type="submit" autofocus>Cancelar</button></form><button class="button button-primary" id="confirm-reward" type="button">Confirmar resgate</button></div></div>
+  </dialog>
+  <dialog id="totem-action-dialog" aria-labelledby="totem-action-title" aria-describedby="totem-action-description">
+    <div class="dialog-body"><h2 id="totem-action-title">Confirmar mudança de atendimento</h2><p id="totem-action-description"></p><div class="dialog-actions"><form method="dialog"><button class="button button-outline" type="submit" autofocus>Cancelar</button></form><button id="confirm-totem-action" class="button button-primary" type="button">Confirmar</button></div></div>
   </dialog>
 </body>
 </html>

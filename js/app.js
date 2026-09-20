@@ -20,6 +20,7 @@
   let identity;
   let payment;
   let loyalty;
+  let totem;
 
   function element(tag, className, text) {
     const node = document.createElement(tag);
@@ -153,7 +154,9 @@
     payment?.cancel();
     cart.changeUnit(unit.id);
     selectedUnit = unit;
-    try { localStorage.setItem(storageKey, unit.id); } catch { storageWarning(); }
+    if (!data.totem.enabled) {
+      try { localStorage.setItem(storageKey, unit.id); } catch { storageWarning(); }
+    }
     updateUnitLabel();
     renderMenu();
     renderCart();
@@ -302,7 +305,10 @@
     const rewardDialog = document.getElementById('reward-dialog');
     if (rewardDialog.open) rewardDialog.close();
     const [view, queryString = ''] = location.hash.slice(1).split('?');
+    const redirect = totem?.guard(view);
+    if (redirect) { navigate(redirect, true); return; }
     const identityViews = {
+      totem: ['totem-view', 'totem-title'],
       entrar: ['login-view', 'login-title'], cadastro: ['register-view', 'register-title'],
       perfil: ['profile-view', 'profile-title'], finalizacao: ['next-step-view', 'next-step-title'],
       confirmacao: ['confirmation-view', 'confirmation-title'], pedidos: ['orders-view', 'orders-title'],
@@ -339,8 +345,8 @@
       document.getElementById('register-link').href = `#cadastro${origin}`;
       document.getElementById('login-link').href = `#entrar${origin}`;
       document.querySelectorAll('.identity-return').forEach((link) => {
-        link.href = params.get('origem') === 'carrinho' ? '#carrinho' : '#inicio';
-        link.textContent = params.get('origem') === 'carrinho' ? 'Voltar ao carrinho' : 'Voltar ao início';
+        link.href = params.get('origem') === 'carrinho' ? '#carrinho' : data.totem.enabled ? '#cardapio' : '#inicio';
+        link.textContent = params.get('origem') === 'carrinho' ? 'Voltar ao carrinho' : data.totem.enabled ? 'Voltar ao cardápio' : 'Voltar ao início';
       });
       identity.show(view);
       if (view === 'finalizacao') {
@@ -365,6 +371,7 @@
       if (target) target.scrollIntoView();
       else if (location.hash === '#inicio') window.scrollTo(0, 0);
     }
+    totem?.update(view);
   }
 
   document.getElementById('featured-products').replaceChildren(...data.featuredProductIds
@@ -433,6 +440,8 @@
     });
   });
   window.addEventListener('hashchange', route);
+  // Uma página recuperada do cache de navegação não deve reviver um atendimento.
+  window.addEventListener('pageshow', (event) => { if (event.persisted) location.reload(); });
   identity = data.auth.init({ onStorageError: storageWarning, onIdentified: completeIdentification, onExit: identityEnded, announce,
     onDelete: (id) => { try { data.orders.removeCustomer(id); return true; } catch { return false; } }
   });
@@ -441,15 +450,31 @@
   payment = data.payment.init({ cart, getCustomer: () => identity.verified(), getUnit: () => selectedUnit, navigate, announce, onCartChanged: updateCartTotals });
   loyalty = data.loyalty.init({ getCustomer: () => identity.verified() });
   payment.recover();
+  totem = data.totem.init({ cart, identity, payment, navigate, announce, reset: () => {
+    document.querySelectorAll('dialog[open]').forEach((modal) => modal.close());
+    search.value = ''; category = 'Todos';
+    filters.forEach((filter) => filter.setAttribute('aria-pressed', String(filter.textContent === category)));
+    pendingUnit = null; detailProductId = null; detailQuantity = 1;
+    clearTimeout(noticeTimer);
+    ['app-notice', 'identity-feedback', 'next-step-customer', 'next-step-summary', 'checkout-items',
+      'checkout-unit', 'checkout-error', 'payment-status', 'confirmation-details', 'confirmation-message', 'tracking-notice'].forEach((id) => document.getElementById(id).replaceChildren());
+    document.getElementById('payment-form').reset();
+    document.getElementById('track-order').removeAttribute('data-order-id');
+    renderMenu(); renderCart();
+  } });
   if (repairedCart && location.hash.startsWith('#finalizacao')) history.replaceState(null, '', '#carrinho');
   updateUnitLabel();
   updateCartTotals();
   route();
-  if (invalidStoredUnit) openUnitSelection(true);
+  if (invalidStoredUnit && !data.totem.enabled) openUnitSelection(true);
   if (repairedCart) announce('O carrinho salvo foi atualizado: dados inválidos ou incompatíveis com a unidade foram descartados ou corrigidos.');
   window.addEventListener('storage', (event) => {
     if (event.key === null || ['raizesNordeste.identity', 'raizesNordeste.cart', 'raizesNordeste.unitId', 'raizesNordeste.orders'].includes(event.key)) {
       payment.cancel();
+      if (data.totem.enabled) {
+        announce('Dados locais foram alterados em outra aba. Revise o pedido antes de continuar. Use somente um atendimento por vez.');
+        return;
+      }
       location.reload();
     }
   });
