@@ -37,7 +37,7 @@ Se preferir, abra a pasta do projeto no VS Code e utilize a extensão
 
 ## GitHub Pages
 
-[Endereço previsto da aplicação](https://isabelferrazdeandrade.github.io/raizes-do-nordeste/)
+[Endereço da aplicação](https://isabelferrazdeandrade.github.io/raizes-do-nordeste/)
 
 O endereço retornou erro 404 na verificação; a publicação ainda precisa ser confirmada.
 
