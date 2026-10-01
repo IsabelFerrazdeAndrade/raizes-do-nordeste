@@ -39,8 +39,6 @@ Se preferir, abra a pasta do projeto no VS Code e utilize a extensão
 
 [Endereço da aplicação](https://isabelferrazdeandrade.github.io/raizes-do-nordeste/)
 
-O endereço retornou erro 404 na verificação; a publicação ainda precisa ser confirmada.
-
 ## Observação
 
 Este é um projeto acadêmico com dados simulados e sem pagamentos reais.
